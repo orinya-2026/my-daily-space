@@ -871,12 +871,17 @@ function renderReflectEntries(){
         <span style="font-size:11px;color:var(--muted);letter-spacing:1px;">${e.date} ${e.time}</span>
       </div>
       <div style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:8px;border-left:2px solid var(--border);padding-left:8px;line-height:1.6;">${e.prompt}</div>
-      <div style="font-size:15px;line-height:1.85;color:var(--text);letter-spacing:0.5px;">${e.text}</div>
-      <div style="text-align:right;margin-top:10px;">
+      <textarea onchange="editEntry(${e.id}, this.value)" style="width:100%;background:rgba(0,0,0,0.02);border:1px solid var(--border);border-radius:1px;padding:10px;font-family:'Noto Serif TC',serif;font-size:15px;line-height:1.85;color:var(--text);letter-spacing:0.5px;resize:vertical;outline:none;min-height:80px;">${e.text}</textarea>
+      <div style="text-align:right;margin-top:8px;">
         <button onclick="deleteEntry(${e.id})" style="background:none;border:none;font-size:11px;color:var(--muted);cursor:pointer;letter-spacing:1px;font-family:'Noto Serif TC',serif;">刪除</button>
       </div>
     </div>
   `).join('');
+}
+
+function editEntry(id, newText){
+  const e = reflectEntries.find(x=>x.id===id);
+  if(e){ e.text = newText; saveReflectEntries(); renderHomeReflect(); showToast('✦ 已更新'); }
 }
 
 function deleteEntry(id){
@@ -1030,7 +1035,13 @@ function showScreen(name){
   } else if(name==='reflect'){
     document.getElementById('reflectScreen').classList.add('active');
     document.getElementById('nav-reflect').classList.add('active');
-    newReflect();
+    // 如果有記錄，預設顯示全部；否則顯示寫入介面
+    if(reflectEntries.length>0){
+      const allBtn = document.querySelector('.rcat');
+      setRCat('all', allBtn);
+    } else {
+      newReflect();
+    }
   } else if(name==='course'){
     document.getElementById('courseScreen').classList.add('active');
     document.getElementById('nav-course').classList.add('active');
