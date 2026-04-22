@@ -466,6 +466,92 @@ input[type=range]::-webkit-slider-thumb{
 .btn-confirm:hover{background:var(--gold2);}
 .btn-cancel2{background:transparent;color:var(--muted);border:1px solid var(--border);}
 
+/* ── CALENDAR ── */
+.cal-wrap{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:2px;
+  padding:16px 14px 12px;
+  margin-bottom:0;
+  flex-shrink:0;
+}
+.cal-nav{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:12px;
+}
+.cal-nav-btn{
+  background:none;border:none;color:var(--gold);
+  font-size:18px;cursor:pointer;padding:2px 8px;line-height:1;
+}
+.cal-month{
+  font-family:'Cinzel',serif;font-size:12px;
+  letter-spacing:3px;color:var(--text);
+}
+.cal-grid{
+  display:grid;grid-template-columns:repeat(7,1fr);
+  border-top:1px solid var(--border);
+  border-left:1px solid var(--border);
+}
+.cal-dow{
+  text-align:center;font-size:10px;color:var(--muted);
+  letter-spacing:1px;padding:5px 0 6px;font-family:'Cinzel',serif;
+  border-right:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+}
+.cal-day{
+  aspect-ratio:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  font-size:12px;cursor:pointer;
+  position:relative;transition:background 0.2s;color:var(--text);
+  border-right:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+}
+.cal-day:hover{background:rgba(160,120,40,0.08);}
+.cal-day.today{background:rgba(160,120,40,0.15);color:var(--gold);font-weight:600;}
+.cal-day.today:hover{background:rgba(160,120,40,0.22);}
+.cal-day.today::before{
+  content:'';position:absolute;inset:4px;
+  border-radius:50%;border:1.5px solid var(--gold);pointer-events:none;
+}
+.cal-day.other-month{color:rgba(138,120,90,0.28);}
+.cal-day.has-entry::after{
+  content:'';position:absolute;bottom:4px;left:50%;
+  transform:translateX(-50%);width:4px;height:4px;
+  border-radius:50%;background:var(--gold);
+}
+.cal-day.today.has-entry::after{background:var(--gold);}
+.cal-day.selected{background:rgba(160,120,40,0.18);}
+.cal-day.selected::before{
+  content:'';position:absolute;inset:4px;
+  border-radius:50%;border:1.5px solid var(--gold);pointer-events:none;
+}
+.cal-day.today.selected{background:rgba(160,120,40,0.25);}
+.day-detail{
+  background:var(--panel);
+  border:1px solid var(--border);border-top:none;
+  border-radius:0 0 2px 2px;
+  padding:14px 14px 10px;
+  animation:fadeUp 0.25s ease;
+  margin-bottom:14px;
+}
+.day-detail-date{
+  font-family:'Cinzel',serif;font-size:10px;
+  letter-spacing:3px;color:var(--gold);margin-bottom:10px;
+}
+.day-entry-item{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:2px;padding:10px 12px;margin-bottom:8px;
+  font-size:13px;line-height:1.75;color:var(--text);
+}
+.day-entry-label{
+  font-size:10px;letter-spacing:2px;padding:2px 8px;
+  border-radius:8px;display:inline-block;margin-bottom:6px;
+}
+.day-empty{
+  font-size:12px;color:var(--muted);text-align:center;
+  padding:8px 0 4px;letter-spacing:1px;
+}
+
 /* TOAST */
 .toast{
   position:fixed;bottom:84px;left:50%;
@@ -499,21 +585,23 @@ input[type=range]::-webkit-slider-thumb{
   </div>
 
   <div class="home-scroll">
-    <div class="today-card">
-      <div class="card-label">TODAY'S REFLECTION · 今日反思</div>
-      <div class="today-prompt" id="homePrompt">正在為你召喚今日的提示⋯⋯</div>
-      <div class="prompt-symbol" id="homeSymbol">🌿</div>
-      <div class="card-action">
-        <button class="btn-ghost" onclick="refreshHomePrompt()">✦ 換一個</button>
-        <button class="btn-ghost" id="writeBtn" onclick="toggleHomeJournal()">✧ 寫下來</button>
+
+    <!-- 月曆 -->
+    <div class="cal-wrap" id="calWrap">
+      <div class="cal-nav">
+        <button class="cal-nav-btn" onclick="calPrev()">‹</button>
+        <div class="cal-month" id="calMonthLabel"></div>
+        <button class="cal-nav-btn" onclick="calNext()">›</button>
       </div>
-      <div class="mini-journal" id="miniJournal">
-        <textarea id="miniJournalText" placeholder="此刻心裡浮現了什麼⋯⋯" rows="3" oninput="autoSaveJournal()"></textarea>
-        <div class="saved-flash" id="savedFlash">✦ 已記錄</div>
+      <div class="cal-grid" id="calGrid">
+        <div class="cal-dow">日</div><div class="cal-dow">一</div><div class="cal-dow">二</div>
+        <div class="cal-dow">三</div><div class="cal-dow">四</div><div class="cal-dow">五</div><div class="cal-dow">六</div>
       </div>
     </div>
+    <!-- 選中日期的記錄面板 -->
+    <div class="day-detail" id="dayDetail" style="display:none;"></div>
 
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;margin-top:4px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;margin-top:14px;">
       <div class="section-title" style="margin:0;">REFLECTIONS · 近期反思</div>
       <button onclick="showScreen('reflect')" style="background:none;border:none;font-size:11px;color:var(--gold);letter-spacing:1px;cursor:pointer;font-family:'Noto Serif TC',serif;">全部 →</button>
     </div>
@@ -626,6 +714,7 @@ input[type=range]::-webkit-slider-thumb{
   <div class="screen-scroll">
     <div class="reflect-cats">
       <button class="rcat active" onclick="setRCat('all',this)">全部</button>
+      <button class="rcat" onclick="setRCat('reminder',this)">今日感性提醒</button>
       <button class="rcat" onclick="setRCat('soul',this)">靈魂清理</button>
       <button class="rcat" onclick="setRCat('body',this)">身心合一</button>
       <button class="rcat" onclick="setRCat('life',this)">生命智慧</button>
@@ -901,12 +990,19 @@ const prompts = {
     {text:"今天，有什麼小事讓你心裡微微一暖？",sym:"☀️"},
     {text:"此刻你擁有的，哪三件事是你曾經渴望擁有的？",sym:"🌼"},
     {text:"今天遇到的某個人，給了你什麼禮物，即使他們不知道？",sym:"🤍"},
+  ],
+  reminder:[
+    {text:"今天想對自己說一句話，會是什麼？",sym:"💌"},
+    {text:"此刻你的心情，用一個顏色來形容是什麼？",sym:"🎨"},
+    {text:"今天有什麼小小的感受，想被你看見？",sym:"🌸"},
+    {text:"你現在最需要的，是什麼樣的能量？",sym:"✨"},
+    {text:"今天的你，有什麼值得被自己記住的時刻？",sym:"📿"},
   ]
 };
 
 function getAllPrompts(){return Object.entries(prompts).map(([k,arr])=>arr.map(p=>({...p,cat:k}))).flat();}
 function getPrompts(cat){return cat==='all'?getAllPrompts():(prompts[cat]||[]).map(p=>({...p,cat}));}
-const catNames={soul:'靈魂清理',body:'身心合一',life:'生命智慧',gratitude:'感恩覺察'};
+const catNames={soul:'靈魂清理',body:'身心合一',life:'生命智慧',gratitude:'感恩覺察',reminder:'今日感性提醒'};
 
 // ── GREETING ──
 function setGreeting(){
@@ -919,43 +1015,134 @@ function setGreeting(){
     `${now.getFullYear()} · ${String(now.getMonth()+1).padStart(2,'0')} · ${String(now.getDate()).padStart(2,'0')} · 星期${days[now.getDay()]}`;
 }
 
-// ── HOME PROMPT ──
-let homePromptIdx=-1;
-function refreshHomePrompt(){
-  const pool=getAllPrompts();
-  const el=document.getElementById('homePrompt');
-  el.classList.add('fade');
-  let idx;do{idx=Math.floor(Math.random()*pool.length);}while(idx===homePromptIdx&&pool.length>1);
-  homePromptIdx=idx;
-  setTimeout(()=>{
-    el.textContent=pool[idx].text;
-    document.getElementById('homeSymbol').textContent=pool[idx].sym;
-    el.classList.remove('fade');
-  },350);
+
+// ── 日曆 ──
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+let selectedDateKey = null;
+
+function todayKey(){ return new Date().toISOString().split('T')[0]; }
+
+function calPrev(){ calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCalendar(); }
+function calNext(){ calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCalendar(); }
+
+function getEntryDates(){
+  const dates = new Set();
+  reflectEntries.forEach(e=>{
+    if(e.dateKey) dates.add(e.dateKey);
+    else if(e.date){
+      try{
+        const parts = e.date.split('/');
+        if(parts.length===3) dates.add(`${parts[0]}-${parts[1].padStart(2,'0')}-${parts[2].padStart(2,'0')}`);
+      }catch(x){}
+    }
+  });
+  return dates;
 }
 
-function toggleHomeJournal(){
-  const j=document.getElementById('miniJournal');
-  const btn=document.getElementById('writeBtn');
-  const isOpen=j.classList.contains('open');
-  j.classList.toggle('open');
-  btn.classList.toggle('lit',!isOpen);
+function renderCalendar(){
+  const months=['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+  document.getElementById('calMonthLabel').textContent = `${calYear}  ${months[calMonth]}`;
+
+  const entryDates = getEntryDates();
+  const today = todayKey();
+  const todayDate = new Date();
+
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const daysInPrev = new Date(calYear, calMonth, 0).getDate();
+
+  let html = '';
+  // 上個月補位
+  for(let i=0; i<firstDay; i++){
+    const d = daysInPrev - firstDay + 1 + i;
+    const dk = `${calMonth===0?calYear-1:calYear}-${String(calMonth===0?12:calMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    html += `<div class="cal-day other-month${entryDates.has(dk)?' has-entry':''}${selectedDateKey===dk?' selected':''}" onclick="selectCalDay('${dk}',${calMonth===0?calYear-1:calYear},${calMonth===0?11:calMonth-1},${d})">${d}</div>`;
+  }
+  // 本月
+  for(let d=1; d<=daysInMonth; d++){
+    const dk = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday = dk===today;
+    const hasEntry = entryDates.has(dk);
+    const isSelected = selectedDateKey===dk;
+    html += `<div class="cal-day${isToday?' today':''}${hasEntry?' has-entry':''}${isSelected?' selected':''}" onclick="selectCalDay('${dk}',${calYear},${calMonth},${d})">${d}</div>`;
+  }
+  // 下個月補位
+  const total = firstDay + daysInMonth;
+  const remaining = total%7===0 ? 0 : 7-(total%7);
+  for(let d=1; d<=remaining; d++){
+    const dk = `${calMonth===11?calYear+1:calYear}-${String(calMonth===11?1:calMonth+2).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    html += `<div class="cal-day other-month${entryDates.has(dk)?' has-entry':''}${selectedDateKey===dk?' selected':''}" onclick="selectCalDay('${dk}',${calMonth===11?calYear+1:calYear},${calMonth===11?0:calMonth+1},${d})">${d}</div>`;
+  }
+
+  const grid = document.getElementById('calGrid');
+  // 移除舊的日期格（保留星期列）
+  const existing = grid.querySelectorAll('.cal-day');
+  existing.forEach(el => el.remove());
+  // 把日期直接插入 grid
+  const temp = document.createElement('div');
+  temp.innerHTML = html;
+  while(temp.firstChild){ grid.appendChild(temp.firstChild); }
 }
 
-let journalTimer;
-function autoSaveJournal(){
-  clearTimeout(journalTimer);
-  journalTimer=setTimeout(()=>{
-    const entries = JSON.parse(localStorage.getItem('home_journal_entries')||'[]');
-    const today = todayKey();
-    const existing = entries.findIndex(e=>e.date===today);
-    const text = document.getElementById('miniJournalText').value;
-    if(existing>=0){ entries[existing].text=text; } else { entries.unshift({date:today,text}); }
-    if(entries.length>30) entries.splice(30);
-    localStorage.setItem('home_journal_entries', JSON.stringify(entries));
-    const f=document.getElementById('savedFlash');
-    f.classList.add('show');setTimeout(()=>f.classList.remove('show'),1800);
-  },900);
+function selectCalDay(dateKey, y, m, d){
+  if(selectedDateKey === dateKey){
+    selectedDateKey = null;
+    document.getElementById('dayDetail').style.display='none';
+    renderCalendar();
+    return;
+  }
+  selectedDateKey = dateKey;
+  renderCalendar();
+  renderDayDetail(dateKey, y, m, d);
+}
+
+function renderDayDetail(dateKey, y, m, d){
+  const el = document.getElementById('dayDetail');
+  const months=['一','二','三','四','五','六','七','八','九','十','十一','十二'];
+  const dateLabel = `${y} 年 ${months[m]} 月 ${d} 日`;
+
+  // 收集當天記錄
+  let items = [];
+  reflectEntries.forEach(e=>{
+    let dk = e.dateKey;
+    if(!dk && e.date){
+      try{
+        const parts = e.date.split('/');
+        if(parts.length===3) dk=`${parts[0]}-${parts[1].padStart(2,'0')}-${parts[2].padStart(2,'0')}`;
+      }catch(x){}
+    }
+    if(dk===dateKey) items.push({type:'reflect', cat:e.catName||'靈性反思', text:e.text, time:e.time||''});
+  });
+
+  // 按時間排序
+  items.sort((a,b)=> a.time > b.time ? 1 : -1);
+
+  const catBg = {
+    '靈魂清理':'rgba(138,90,160,0.12)', '身心合一':'rgba(60,130,80,0.12)',
+    '生命智慧':'rgba(50,90,160,0.12)', '感恩覺察':'rgba(180,140,40,0.12)',
+    '今日感性提醒':'rgba(190,80,100,0.12)'
+  };
+  const catColor = {
+    '靈魂清理':'#7040a0','身心合一':'#3a7050',
+    '生命智慧':'#305090','感恩覺察':'#906820','今日感性提醒':'#a03050'
+  };
+
+  el.style.display = 'block';
+  el.innerHTML = `<div class="day-detail-date">${dateLabel}</div>`
+    + (items.length===0
+      ? `<div class="day-empty">這天還沒有記錄 🌿</div>`
+      : items.map(it=>`
+        <div class="day-entry-item">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <span class="day-entry-label" style="background:${catBg[it.cat]||'rgba(160,120,40,0.1)'};color:${catColor[it.cat]||'var(--gold)'};">${it.cat}</span>
+            ${it.time?`<span style="font-size:11px;color:var(--muted);">${it.time}</span>`:''}
+          </div>
+          <div style="font-size:14px;line-height:1.8;color:var(--text);">${it.text}</div>
+        </div>`).join('')
+    );
+  // 滾動到日曆下方
+  el.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
 // ── REFLECT ──
@@ -1002,12 +1189,14 @@ function saveReflectEntry(){
     catName: catNames[currentRCat] || '',
     prompt,
     text,
+    dateKey: todayKey(),
     time: new Date().toLocaleTimeString('zh-TW', {hour:'2-digit', minute:'2-digit'}),
     date: new Date().toLocaleDateString('zh-TW')
   });
   saveReflectEntries();
   document.getElementById('reflectJournal').value = '';
   renderHomeReflect();
+  renderCalendar();
   showToast('✦ 反思已儲存');
 }
 
@@ -1015,10 +1204,11 @@ const catColors = {
   soul:'rgba(138,90,160,0.12)',
   body:'rgba(60,130,80,0.12)',
   life:'rgba(50,90,160,0.12)',
-  gratitude:'rgba(180,140,40,0.12)'
+  gratitude:'rgba(180,140,40,0.12)',
+  reminder:'rgba(190,80,100,0.12)'
 };
 const catTextColors = {
-  soul:'#7040a0', body:'#3a7050', life:'#305090', gratitude:'#906820'
+  soul:'#7040a0', body:'#3a7050', life:'#305090', gratitude:'#906820', reminder:'#a03050'
 };
 
 function renderReflectEntries(){
@@ -1503,12 +1693,8 @@ function showScreen(name){
   } else if(name==='reflect'){
     document.getElementById('reflectScreen').classList.add('active');
     document.getElementById('nav-reflect').classList.add('active');
-    if(reflectEntries.length>0){
-      const allBtn = document.querySelector('.rcat');
-      setRCat('all', allBtn);
-    } else {
-      newReflect();
-    }
+    const allBtn = document.querySelector('.rcat');
+    setRCat('all', allBtn);
   } else if(name==='course'){
     document.getElementById('courseScreen').classList.add('active');
     document.getElementById('nav-course').classList.add('active');
@@ -1521,7 +1707,6 @@ function showScreen(name){
 function goHome(){showScreen('home');}
 
 // ── UTILS ──
-function todayKey(){return new Date().toISOString().split('T')[0];}
 function showToast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg;t.classList.add('show');
@@ -1861,7 +2046,7 @@ function importBackup(event){
 
 // ── INIT ──
 setGreeting();
-refreshHomePrompt();
+renderCalendar();
 renderHomeCourses();
 renderFullCourses();
 renderBookList();
@@ -1871,9 +2056,7 @@ newReflect();
 autoBackup();
 updateBackupStatus();
 
-const homeJournalEntries = JSON.parse(localStorage.getItem('home_journal_entries')||'[]');
-const todayEntry = homeJournalEntries.find(e=>e.date===todayKey());
-if(todayEntry) document.getElementById('miniJournalText').value = todayEntry.text;
+// init done
 </script>
 </body>
 </html>
