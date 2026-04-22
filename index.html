@@ -326,9 +326,14 @@ input,select,textarea{
   font-size:13px;color:var(--text);
   outline:none;transition:border-color 0.3s;width:100%;
 }
+select{
+  background:var(--card);
+  color:var(--text);
+  -webkit-appearance:auto;
+}
 input:focus,select:focus,textarea:focus{border-color:var(--gold);}
 input::placeholder,textarea::placeholder{color:var(--muted);font-size:12px;}
-select option{background:#1a1410;}
+select option{background:var(--card);color:var(--text);}
 .btn-primary{
   width:100%;padding:11px;
   background:var(--gold);color:#0a0806;
@@ -529,7 +534,7 @@ input[type=range]::-webkit-slider-thumb{
       <div class="f-col">
         <input type="text" id="inputName" placeholder="課程名稱">
         <div class="f-row">
-          <select id="inputCat">
+          <select id="inputCat" onchange="toggleOtherNote(this.value)">
             <option value="古典中醫">古典中醫</option>
             <option value="易經">易經</option>
             <option value="奧修禪卡">奧修禪卡</option>
@@ -538,6 +543,19 @@ input[type=range]::-webkit-slider-thumb{
           </select>
           <input type="number" id="inputTotal" placeholder="總集數" min="1" style="max-width:90px;">
         </div>
+        <input type="text" id="inputOtherNote" placeholder="請輸入類別備註" style="display:none;">
+        <select id="inputPlatform" onchange="togglePlatformOther()" style="background:var(--card);color:var(--text);border:1px solid var(--border);">
+          <option value="" style="background:var(--card);color:var(--text);">選擇上課平台（可選）</option>
+          <option value="Press Play ACADEMY" style="background:var(--card);color:var(--text);">Press Play ACADEMY</option>
+          <option value="知識衛星" style="background:var(--card);color:var(--text);">知識衛星</option>
+          <option value="孜孜" style="background:var(--card);color:var(--text);">孜孜</option>
+          <option value="ShiFu" style="background:var(--card);color:var(--text);">ShiFu</option>
+          <option value="電端中醫" style="background:var(--card);color:var(--text);">電端中醫</option>
+          <option value="YouTube" style="background:var(--card);color:var(--text);">YouTube</option>
+          <option value="黃庭書院" style="background:var(--card);color:var(--text);">黃庭書院</option>
+          <option value="其他平台" style="background:var(--card);color:var(--text);">其他（自行輸入）</option>
+        </select>
+        <input type="text" id="inputPlatformOther" placeholder="請輸入平台名稱" style="display:none;">
       </div>
       <button class="btn-primary" onclick="addCourse()">＋ 加入學習地圖</button>
     </div>
@@ -691,10 +709,15 @@ input[type=range]::-webkit-slider-thumb{
   <div class="modal">
     <div class="modal-title">UPDATE PROGRESS</div>
     <div class="modal-name" id="modalName"></div>
+    <div class="modal-platform" id="modalPlatform" style="font-size:11px;color:var(--muted);letter-spacing:1px;margin-bottom:12px;"></div>
     <div class="slider-row">
       <div class="slider-meta"><span>已看集數</span><span id="sliderVal">0</span></div>
-      <input type="range" id="progressSlider" min="0" max="100" value="0"
-        oninput="document.getElementById('sliderVal').textContent=this.value">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button onclick="adjustProgress(-1)" style="width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:transparent;font-size:20px;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">－</button>
+        <input type="range" id="progressSlider" min="0" max="100" value="0" style="flex:1;"
+          oninput="document.getElementById('sliderVal').textContent=this.value">
+        <button onclick="adjustProgress(1)" style="width:36px;height:36px;border-radius:50%;border:1px solid var(--gold);background:transparent;font-size:20px;color:var(--gold);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">＋</button>
+      </div>
     </div>
     <input type="text" id="modalNote" placeholder="這次學到了什麼？（可選）">
     <div class="modal-actions">
@@ -893,20 +916,44 @@ function deleteEntry(id){
 }
 
 // ── COURSES ──
-function saveCourses(){localStorage.setItem('myspace_courses',JSON.stringify(courses));}
+function toggleOtherNote(val){
+  document.getElementById('inputOtherNote').style.display = val==='其他'?'block':'none';
+}
+
+function togglePlatformOther(){
+  const sel = document.getElementById('inputPlatform');
+  document.getElementById('inputPlatformOther').style.display = sel.value==='其他平台'?'block':'none';
+}
+
+function adjustProgress(delta){
+  const sl = document.getElementById('progressSlider');
+  const newVal = Math.max(0, Math.min(parseInt(sl.max), parseInt(sl.value)+delta));
+  sl.value = newVal;
+  document.getElementById('sliderVal').textContent = newVal;
+}
 
 function addCourse(){
-  const name=document.getElementById('inputName').value.trim();
-  const cat=document.getElementById('inputCat').value;
-  const total=parseInt(document.getElementById('inputTotal').value)||0;
+  const name = document.getElementById('inputName').value.trim();
+  const cat = document.getElementById('inputCat').value;
+  const otherNote = document.getElementById('inputOtherNote').value.trim();
+  const total = parseInt(document.getElementById('inputTotal').value)||0;
+  const platformSel = document.getElementById('inputPlatform').value;
+  const platformOther = document.getElementById('inputPlatformOther').value.trim();
+  const platform = platformSel==='其他平台' ? platformOther : platformSel;
   if(!name){showToast('請輸入課程名稱');return;}
-  courses.unshift({id:Date.now(),name,cat,total,watched:0,progress:0,lastDate:null,lastNote:''});
+  courses.unshift({
+    id:Date.now(), name, cat,
+    catNote: cat==='其他' ? otherNote : '',
+    platform, total, watched:0, progress:0, lastDate:null, lastNote:''
+  });
   document.getElementById('inputName').value='';
   document.getElementById('inputTotal').value='';
-  saveCourses();
-  renderFullCourses();
-  renderHomeCourses();
-  showToast('✦ 課程已加入');
+  document.getElementById('inputOtherNote').value='';
+  document.getElementById('inputPlatform').value='';
+  document.getElementById('inputPlatformOther').value='';
+  document.getElementById('inputOtherNote').style.display='none';
+  document.getElementById('inputPlatformOther').style.display='none';
+  saveCourses(); renderFullCourses(); renderHomeCourses(); showToast('✦ 課程已加入');
 }
 
 function renderHomeCourses(){
@@ -973,7 +1020,10 @@ function renderFullCourses(){
     const pct=c.total>0?Math.round((c.watched/c.total)*100):c.progress;
     return`<div class="course-card${pct===100?' done':''}">
       <div class="cc-top">
-        <div class="cc-name">${c.name}</div>
+        <div style="flex:1;">
+          <div class="cc-name">${c.name}</div>
+          ${c.platform||c.catNote ? `<div style="font-size:11px;color:var(--muted);letter-spacing:1px;margin-top:2px;">${[c.platform,c.catNote].filter(Boolean).join(' · ')}</div>` : ''}
+        </div>
         <div class="cc-tag tag-${c.cat}">${c.cat}</div>
       </div>
       <div class="pb-wrap">
@@ -1003,6 +1053,8 @@ function openModal(id){
   editingId=id;
   const c=courses.find(x=>x.id===id);
   document.getElementById('modalName').textContent=c.name;
+  const meta = [c.platform, c.catNote].filter(Boolean).join(' · ');
+  document.getElementById('modalPlatform').textContent = meta;
   const sl=document.getElementById('progressSlider');
   sl.max=c.total>0?c.total:100;
   sl.value=c.total>0?c.watched:c.progress;
