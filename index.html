@@ -1293,18 +1293,8 @@ function saveBookDetail(){
 function closeBookModal(){ document.getElementById('bookModalOverlay').classList.remove('show'); editingBookId=null; }
 function closeBookModalOut(e){ if(e.target===document.getElementById('bookModalOverlay')) closeBookModal(); }
 
-function deleteBook(id){
-  const btn = event.target;
-  if(btn.dataset.confirm==='1'){
-    books = books.filter(b=>b.id!==id);
-    saveBooks(); renderBookList(); renderHomeBooks(); showToast('已刪除');
-  } else {
-    btn.dataset.confirm='1';
-    btn.textContent='確定？';
-    btn.style.color='#c0392b';
-    setTimeout(()=>{ if(btn.dataset.confirm==='1'){ btn.dataset.confirm=''; btn.textContent='刪除'; btn.style.color=''; } },3000);
-  }
-}
+
+
 
 function renderReview(){
   const el = document.getElementById('reviewContent');
