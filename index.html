@@ -714,11 +714,26 @@ input[type=range]::-webkit-slider-thumb{
   <div class="screen-scroll">
     <div class="reflect-cats">
       <button class="rcat active" onclick="setRCat('all',this)">全部</button>
-      <button class="rcat" onclick="setRCat('reminder',this)">今日感性提醒</button>
+      <button class="rcat" onclick="setRCat('cardlib',this)">我的牌卡庫</button>
       <button class="rcat" onclick="setRCat('soul',this)">靈魂清理</button>
       <button class="rcat" onclick="setRCat('body',this)">身心合一</button>
       <button class="rcat" onclick="setRCat('life',this)">生命智慧</button>
       <button class="rcat" onclick="setRCat('gratitude',this)">感恩覺察</button>
+    </div>
+
+    <!-- 牌卡庫寫入區（只有 cardlib 分類才顯示輸入框，不顯示隨機提示） -->
+    <div id="cardlibWriteArea" style="display:none;">
+      <div class="reflect-card">
+        <div class="reflect-tag">我的牌卡庫 · 今日抽牌</div>
+        <div style="font-size:15px;color:var(--muted);line-height:1.9;letter-spacing:0.5px;">把今天抽到的牌卡句子寫下來，它會自動加入提示庫，未來隨機出現在各分類裡 🌿</div>
+        <div class="reflect-sym">🃏</div>
+      </div>
+      <div class="journal-full" style="margin-bottom:10px;">
+        <textarea id="cardlibInput" placeholder="寫下今天的牌卡句子⋯⋯" rows="3"></textarea>
+      </div>
+      <button class="btn-primary" onclick="saveCardEntry()">✦ 存入牌卡庫</button>
+      <!-- 牌卡庫所有記錄 -->
+      <div id="cardlibList" style="margin-top:16px;"></div>
     </div>
     <div id="reflectWriteArea">
       <div class="reflect-card">
@@ -990,19 +1005,29 @@ const prompts = {
     {text:"今天，有什麼小事讓你心裡微微一暖？",sym:"☀️"},
     {text:"此刻你擁有的，哪三件事是你曾經渴望擁有的？",sym:"🌼"},
     {text:"今天遇到的某個人，給了你什麼禮物，即使他們不知道？",sym:"🤍"},
-  ],
-  reminder:[
-    {text:"今天想對自己說一句話，會是什麼？",sym:"💌"},
-    {text:"此刻你的心情，用一個顏色來形容是什麼？",sym:"🎨"},
-    {text:"今天有什麼小小的感受，想被你看見？",sym:"🌸"},
-    {text:"你現在最需要的，是什麼樣的能量？",sym:"✨"},
-    {text:"今天的你，有什麼值得被自己記住的時刻？",sym:"📿"},
   ]
 };
 
-function getAllPrompts(){return Object.entries(prompts).map(([k,arr])=>arr.map(p=>({...p,cat:k}))).flat();}
-function getPrompts(cat){return cat==='all'?getAllPrompts():(prompts[cat]||[]).map(p=>({...p,cat}));}
-const catNames={soul:'靈魂清理',body:'身心合一',life:'生命智慧',gratitude:'感恩覺察',reminder:'今日感性提醒'};
+function getAllPrompts(){
+  // 內建提示 + 牌卡庫隨機混入
+  const base = Object.entries(prompts).map(([k,arr])=>arr.map(p=>({...p,cat:k}))).flat();
+  const cards = getCardPrompts();
+  return [...base, ...cards];
+}
+function getCardPrompts(){
+  const cards = JSON.parse(localStorage.getItem('myspace_cardlib')||'[]');
+  // 每張卡片作為一個隨機提示，分類標為 cardlib
+  return cards.map(c=>({text:c.text, sym:'🃏', cat:'cardlib'}));
+}
+function getPrompts(cat){
+  if(cat==='all') return getAllPrompts();
+  if(cat==='cardlib') return getCardPrompts();
+  const base = (prompts[cat]||[]).map(p=>({...p,cat}));
+  // 其他分類也混入牌卡庫
+  const cards = getCardPrompts();
+  return [...base, ...cards];
+}
+const catNames={soul:'靈魂清理',body:'身心合一',life:'生命智慧',gratitude:'感恩覺察',cardlib:'我的牌卡庫'};
 
 // ── GREETING ──
 function setGreeting(){
@@ -1121,11 +1146,11 @@ function renderDayDetail(dateKey, y, m, d){
   const catBg = {
     '靈魂清理':'rgba(138,90,160,0.12)', '身心合一':'rgba(60,130,80,0.12)',
     '生命智慧':'rgba(50,90,160,0.12)', '感恩覺察':'rgba(180,140,40,0.12)',
-    '今日感性提醒':'rgba(190,80,100,0.12)'
+    '我的牌卡庫':'rgba(190,80,100,0.12)'
   };
   const catColor = {
     '靈魂清理':'#7040a0','身心合一':'#3a7050',
-    '生命智慧':'#305090','感恩覺察':'#906820','今日感性提醒':'#a03050'
+    '生命智慧':'#305090','感恩覺察':'#906820','我的牌卡庫':'#a03050'
   };
 
   el.style.display = 'block';
@@ -1153,15 +1178,95 @@ function setRCat(cat, el){
   currentRCat = cat;
   document.querySelectorAll('.rcat').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
+
+  // 三種顯示模式
+  const writeArea = document.getElementById('reflectWriteArea');
+  const allArea = document.getElementById('reflectAllArea');
+  const cardlibArea = document.getElementById('cardlibWriteArea');
+
+  writeArea.style.display = 'none';
+  allArea.style.display = 'none';
+  cardlibArea.style.display = 'none';
+
   if(cat === 'all'){
-    document.getElementById('reflectWriteArea').style.display = 'none';
-    document.getElementById('reflectAllArea').style.display = 'block';
+    allArea.style.display = 'block';
     renderReflectEntries();
+  } else if(cat === 'cardlib'){
+    cardlibArea.style.display = 'block';
+    renderCardlibList();
   } else {
-    document.getElementById('reflectWriteArea').style.display = 'block';
-    document.getElementById('reflectAllArea').style.display = 'none';
+    writeArea.style.display = 'block';
     document.getElementById('reflectJournal').value = '';
     newReflect();
+  }
+}
+
+// ── 牌卡庫 ──
+function saveCardEntry(){
+  const text = document.getElementById('cardlibInput').value.trim();
+  if(!text){ showToast('請先輸入牌卡句子'); return; }
+  const cards = JSON.parse(localStorage.getItem('myspace_cardlib')||'[]');
+  const now = new Date();
+  cards.unshift({
+    id: Date.now(),
+    text,
+    dateKey: todayKey(),
+    date: now.toLocaleDateString('zh-TW'),
+    time: now.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'})
+  });
+  localStorage.setItem('myspace_cardlib', JSON.stringify(cards));
+  // 也存進 reflectEntries 讓日曆和首頁看得到
+  reflectEntries.unshift({
+    id: Date.now()+1,
+    cat: 'cardlib',
+    catName: '我的牌卡庫',
+    prompt: '今日抽牌',
+    text,
+    dateKey: todayKey(),
+    time: now.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}),
+    date: now.toLocaleDateString('zh-TW')
+  });
+  saveReflectEntries();
+  document.getElementById('cardlibInput').value = '';
+  renderCardlibList();
+  renderHomeReflect();
+  renderCalendar();
+  showToast('✦ 已存入牌卡庫');
+}
+
+function renderCardlibList(){
+  const el = document.getElementById('cardlibList');
+  if(!el) return;
+  const cards = JSON.parse(localStorage.getItem('myspace_cardlib')||'[]');
+  if(cards.length===0){
+    el.innerHTML=`<div style="text-align:center;padding:20px 0;color:var(--muted);font-size:13px;letter-spacing:1px;line-height:2;">牌卡庫還是空的<br>每天抽一張，慢慢累積 🌿</div>`;
+    return;
+  }
+  el.innerHTML = `<div style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:4px;color:var(--muted);margin-bottom:12px;">MY CARD LIBRARY · ${cards.length} 張</div>`
+    + cards.map(c=>`
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:2px;padding:14px 16px;margin-bottom:10px;animation:slideIn 0.4s ease;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span style="font-size:10px;color:var(--muted);letter-spacing:1px;">${c.date} ${c.time}</span>
+        <button onclick="deleteCard(${c.id},this)" style="background:none;border:none;font-size:11px;color:var(--muted);cursor:pointer;font-family:'Noto Serif TC',serif;">刪除</button>
+      </div>
+      <div style="font-size:15px;color:var(--text);line-height:1.85;letter-spacing:0.5px;">🃏 ${c.text}</div>
+    </div>
+  `).join('');
+}
+
+function deleteCard(id, btn){
+  if(!btn) btn = event.target;
+  if(btn.dataset.confirm==='1'){
+    let cards = JSON.parse(localStorage.getItem('myspace_cardlib')||'[]');
+    cards = cards.filter(c=>c.id!==id);
+    localStorage.setItem('myspace_cardlib', JSON.stringify(cards));
+    // 同步移除 reflectEntries 裡的對應項
+    reflectEntries = reflectEntries.filter(e=>!(e.cat==='cardlib' && e.id===id+1));
+    saveReflectEntries();
+    renderCardlibList(); renderHomeReflect(); renderCalendar(); showToast('已刪除');
+  } else {
+    btn.dataset.confirm='1'; btn.textContent='確定？'; btn.style.color='#c0392b';
+    setTimeout(()=>{ if(btn.dataset.confirm==='1'){ btn.dataset.confirm=''; btn.textContent='刪除'; btn.style.color=''; } },3000);
   }
 }
 
@@ -1205,10 +1310,10 @@ const catColors = {
   body:'rgba(60,130,80,0.12)',
   life:'rgba(50,90,160,0.12)',
   gratitude:'rgba(180,140,40,0.12)',
-  reminder:'rgba(190,80,100,0.12)'
+  cardlib:'rgba(190,80,100,0.12)'
 };
 const catTextColors = {
-  soul:'#7040a0', body:'#3a7050', life:'#305090', gratitude:'#906820', reminder:'#a03050'
+  soul:'#7040a0', body:'#3a7050', life:'#305090', gratitude:'#906820', cardlib:'#a03050'
 };
 
 function renderReflectEntries(){
@@ -1982,6 +2087,7 @@ function autoBackup(){
     courses: JSON.parse(localStorage.getItem('myspace_courses')||'[]'),
     reflectEntries: JSON.parse(localStorage.getItem('reflect_entries')||'[]'),
     books: JSON.parse(localStorage.getItem('myspace_books')||'[]'),
+    cardlib: JSON.parse(localStorage.getItem('myspace_cardlib')||'[]'),
     journal: localStorage.getItem('journal_'+today)||''
   };
   let backupLog = JSON.parse(localStorage.getItem('backup_log')||'[]');
@@ -2010,6 +2116,7 @@ function exportBackup(){
     courses: JSON.parse(localStorage.getItem('myspace_courses')||'[]'),
     reflectEntries: JSON.parse(localStorage.getItem('reflect_entries')||'[]'),
     books: JSON.parse(localStorage.getItem('myspace_books')||'[]'),
+    cardlib: JSON.parse(localStorage.getItem('myspace_cardlib')||'[]'),
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
@@ -2031,6 +2138,7 @@ function importBackup(event){
       if(data.courses) localStorage.setItem('myspace_courses', JSON.stringify(data.courses));
       if(data.reflectEntries) localStorage.setItem('reflect_entries', JSON.stringify(data.reflectEntries));
       if(data.books) localStorage.setItem('myspace_books', JSON.stringify(data.books));
+      if(data.cardlib) localStorage.setItem('myspace_cardlib', JSON.stringify(data.cardlib));
       courses = JSON.parse(localStorage.getItem('myspace_courses')||'[]');
       reflectEntries = JSON.parse(localStorage.getItem('reflect_entries')||'[]');
       books = JSON.parse(localStorage.getItem('myspace_books')||'[]');
