@@ -597,7 +597,23 @@ input[type=range]::-webkit-slider-thumb{
       </div>
       <button class="btn-primary" onclick="addCourse()">＋ 加入學習地圖</button>
     </div>
-    <div id="fullCourseList"></div>
+
+    <!-- 課程列表區塊（不同背景色區隔） -->
+    <div id="courseListSection" style="
+      background:var(--panel);
+      border-radius:2px;
+      padding:16px;
+      margin-top:4px;
+      margin-left:-20px;
+      margin-right:-20px;
+      padding-left:20px;
+      padding-right:20px;
+      border-top:1px solid var(--border);
+      min-height:60px;
+    ">
+      <div style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:4px;color:var(--muted);margin-bottom:12px;">MY COURSES · 我的課程</div>
+      <div id="fullCourseList"></div>
+    </div>
   </div>
 </div>
 
@@ -1226,35 +1242,87 @@ function renderHomeCourses(){
   }).join('');
 }
 
+let expandedCourseId = null;
+
 function renderFullCourses(){
   const el=document.getElementById('fullCourseList');
-  if(courses.length===0){el.innerHTML='';return;}
-  el.innerHTML=courses.map(c=>{
+  if(courses.length===0){
+    el.innerHTML=`<div style="text-align:center;padding:20px 0;color:var(--muted);font-size:13px;letter-spacing:1px;">還沒有課程，在上方新增吧 ✦</div>`;
+    return;
+  }
+  el.innerHTML=courses.map((c,i)=>{
     const pct=getCourseProgress(c);
     const label=getCourseProgressLabel(c);
-    return`<div class="course-card">
-      <div class="cc-top">
-        <div style="flex:1;">
-          <div class="cc-name">${c.name}</div>
-          ${c.platform||c.catNote ? `<div style="font-size:11px;color:var(--muted);letter-spacing:1px;margin-top:2px;">${[c.platform,c.catNote].filter(Boolean).join(' · ')}</div>` : ''}
-        </div>
-        <div class="cc-tag tag-${c.cat}">${c.cat}</div>
+    const isExpanded = expandedCourseId === c.id;
+    const isDone = pct>=100;
+    const r=14; const circ=2*Math.PI*r; const offset=circ*(1-pct/100);
+
+    // 條列式行
+    const row = `<div onclick="toggleCourseExpand(${c.id})" style="
+      display:flex;align-items:center;gap:12px;
+      padding:11px 12px;
+      background:var(--card);
+      border:1px solid ${isExpanded?'var(--gold)':'var(--border)'};
+      border-radius:${isExpanded?'2px 2px 0 0':'2px'};
+      cursor:pointer;transition:border-color 0.3s;
+      ${i>0&&!isExpanded?'margin-top:8px;':''}
+      ${i>0&&isExpanded?'margin-top:8px;':''}
+    ">
+      <!-- 小圓環進度 -->
+      <div style="position:relative;width:30px;height:30px;flex-shrink:0;">
+        <svg width="30" height="30" viewBox="0 0 30 30" style="transform:rotate(-90deg)">
+          <circle fill="none" stroke="rgba(0,0,0,0.08)" stroke-width="2.5" cx="15" cy="15" r="${r}"/>
+          <circle fill="none" stroke="${isDone?'#7a9a6a':'var(--gold)'}" stroke-width="2.5" stroke-linecap="round"
+            cx="15" cy="15" r="${r}"
+            stroke-dasharray="${circ}" stroke-dashoffset="${offset}"/>
+        </svg>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:8px;color:${isDone?'#7a9a6a':'var(--gold)'};font-family:'Cinzel',serif;">${pct}%</div>
       </div>
-      <div class="pb-wrap">
-        <div class="pb-meta"><span>${label}</span><span>${pct}%</span></div>
-        <div class="pb"><div class="pb-fill" style="width:${pct}%"></div></div>
+      <!-- 名稱 + 標籤 -->
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:15px;font-weight:400;letter-spacing:0.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;${isDone?'text-decoration:line-through;color:var(--muted);':''}">${c.name}</div>
+        <div style="font-size:11px;color:var(--muted);letter-spacing:1px;margin-top:2px;">${c.platform||c.catNote?[c.platform,c.catNote].filter(Boolean).join(' · '):'&nbsp;'}</div>
       </div>
-      <div class="cc-date">${c.lastDate?`上次學習：<span>${c.lastDate}</span>`:'尚未開始'}</div>
-      ${c.lastNote?`<div class="cc-lastnote">${c.lastNote}</div>`:''}
-      <div class="cc-actions">
-        ${pct<100
-          ?`<button class="btn-xs primary" onclick="openModal(${c.id})">✦ 更新進度</button>`
-          :`<button class="btn-xs" style="color:#7a9a6a;border-color:#7a9a6a">✓ 完成</button>`}
-        <button class="btn-xs" onclick="openEditCourse(${c.id})">✎ 編輯</button>
-        <button class="btn-xs danger" onclick="deleteCourse(${c.id}, this)">刪除</button>
+      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+        <div class="mini-tag tag-${c.cat}" style="font-size:10px;">${c.cat}</div>
+        <div style="font-size:14px;color:var(--muted);transition:transform 0.3s;transform:rotate(${isExpanded?'90deg':'0deg'});">›</div>
       </div>
     </div>`;
+
+    // 展開詳情面板
+    const detail = isExpanded ? `<div style="
+      background:#faf7f0;
+      border:1px solid var(--gold);border-top:none;
+      border-radius:0 0 2px 2px;
+      padding:14px 12px;
+      animation:fadeUp 0.2s ease;
+    ">
+      <div style="margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:5px;letter-spacing:1px;">
+          <span>${label||'進度'}</span><span>${pct}%</span>
+        </div>
+        <div style="height:3px;background:rgba(0,0,0,0.08);border-radius:2px;overflow:hidden;">
+          <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:2px;transition:width 0.6s;"></div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);letter-spacing:1px;margin-bottom:12px;">${c.lastDate?`上次學習：<span style="color:var(--gold)">${c.lastDate}</span>`:'尚未開始'}</div>
+      ${c.lastNote?`<div style="font-size:13px;color:#7a6a50;line-height:1.7;font-style:italic;border-left:2px solid var(--border);padding-left:8px;margin-bottom:12px;">${c.lastNote}</div>`:''}
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        ${pct<100
+          ?`<button class="btn-xs primary" onclick="event.stopPropagation();openModal(${c.id})">✦ 更新進度</button>`
+          :`<button class="btn-xs" style="color:#7a9a6a;border-color:#7a9a6a">✓ 完成</button>`}
+        <button class="btn-xs" onclick="event.stopPropagation();openEditCourse(${c.id})">✎ 編輯</button>
+        <button class="btn-xs danger" onclick="event.stopPropagation();deleteCourse(${c.id}, this)">刪除</button>
+      </div>
+    </div>` : '';
+
+    return row + detail;
   }).join('');
+}
+
+function toggleCourseExpand(id){
+  expandedCourseId = expandedCourseId === id ? null : id;
+  renderFullCourses();
 }
 
 function deleteCourse(id, btn){
