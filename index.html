@@ -343,6 +343,23 @@ select option{background:var(--card);color:var(--text);}
 }
 .btn-primary:hover{background:var(--gold2);}
 
+/* progress mode toggle */
+.mode-toggle{
+  display:flex;gap:0;border:1px solid var(--border);border-radius:1px;overflow:hidden;
+}
+.mode-btn{
+  flex:1;padding:8px;
+  background:transparent;border:none;
+  font-family:'Noto Serif TC',serif;font-size:12px;letter-spacing:1px;
+  color:var(--muted);cursor:pointer;transition:all 0.3s;
+}
+.mode-btn.active{background:var(--gold);color:#fff;}
+
+/* chapter grid */
+.chapter-grid{display:flex;flex-direction:column;gap:8px;margin-bottom:10px;}
+.chapter-row{display:flex;gap:8px;align-items:center;}
+.chapter-label{font-size:12px;color:var(--muted);letter-spacing:1px;width:44px;flex-shrink:0;}
+
 /* reflection full */
 .reflect-cats{
   display:flex;gap:8px;flex-wrap:wrap;
@@ -482,7 +499,6 @@ input[type=range]::-webkit-slider-thumb{
   </div>
 
   <div class="home-scroll">
-    <!-- Today's reflection -->
     <div class="today-card">
       <div class="card-label">TODAY'S REFLECTION · 今日反思</div>
       <div class="today-prompt" id="homePrompt">正在為你召喚今日的提示⋯⋯</div>
@@ -497,27 +513,23 @@ input[type=range]::-webkit-slider-thumb{
       </div>
     </div>
 
-    <!-- Recent reflections -->
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;margin-top:4px;">
       <div class="section-title" style="margin:0;">REFLECTIONS · 近期反思</div>
       <button onclick="showScreen('reflect')" style="background:none;border:none;font-size:11px;color:var(--gold);letter-spacing:1px;cursor:pointer;font-family:'Noto Serif TC',serif;">全部 →</button>
     </div>
     <div id="homeReflectList"></div>
 
-    <!-- Course quick view -->
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;margin-top:8px;">
       <div class="section-title" style="margin:0;">LEARNING · 學習進度</div>
       <button onclick="showScreen('course')" style="background:none;border:none;font-size:11px;color:var(--gold);letter-spacing:1px;cursor:pointer;font-family:'Noto Serif TC',serif;">全部 →</button>
     </div>
     <div id="homeCourseList"></div>
 
-    <!-- Reading quick view -->
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;margin-top:8px;">
       <div class="section-title" style="margin:0;">READING · 閱讀中</div>
       <button onclick="showScreen('reading')" style="background:none;border:none;font-size:11px;color:var(--gold);letter-spacing:1px;cursor:pointer;font-family:'Noto Serif TC',serif;">全部 →</button>
     </div>
     <div id="homeBookList"></div>
-
   </div>
 </div>
 
@@ -541,21 +553,47 @@ input[type=range]::-webkit-slider-thumb{
             <option value="筆記輸出">筆記輸出</option>
             <option value="其他">其他</option>
           </select>
-          <input type="number" id="inputTotal" placeholder="總集數" min="1" style="max-width:90px;">
         </div>
         <input type="text" id="inputOtherNote" placeholder="請輸入類別備註" style="display:none;">
-        <select id="inputPlatform" onchange="togglePlatformOther()" style="background:var(--card);color:var(--text);border:1px solid var(--border);">
-          <option value="" style="background:var(--card);color:var(--text);">選擇上課平台（可選）</option>
-          <option value="Press Play ACADEMY" style="background:var(--card);color:var(--text);">Press Play ACADEMY</option>
-          <option value="知識衛星" style="background:var(--card);color:var(--text);">知識衛星</option>
-          <option value="孜孜" style="background:var(--card);color:var(--text);">孜孜</option>
-          <option value="ShiFu" style="background:var(--card);color:var(--text);">ShiFu</option>
-          <option value="電端中醫" style="background:var(--card);color:var(--text);">電端中醫</option>
-          <option value="YouTube" style="background:var(--card);color:var(--text);">YouTube</option>
-          <option value="黃庭書院" style="background:var(--card);color:var(--text);">黃庭書院</option>
-          <option value="其他平台" style="background:var(--card);color:var(--text);">其他（自行輸入）</option>
+        <select id="inputPlatform" onchange="togglePlatformOther()">
+          <option value="">選擇上課平台（可選）</option>
+          <option value="Press Play ACADEMY">Press Play ACADEMY</option>
+          <option value="知識衛星">知識衛星</option>
+          <option value="孜孜">孜孜</option>
+          <option value="ShiFu">ShiFu</option>
+          <option value="電端中醫">電端中醫</option>
+          <option value="YouTube">YouTube</option>
+          <option value="黃庭書院">黃庭書院</option>
+          <option value="其他平台">其他（自行輸入）</option>
         </select>
         <input type="text" id="inputPlatformOther" placeholder="請輸入平台名稱" style="display:none;">
+
+        <!-- 進度模式選擇 -->
+        <div style="font-size:11px;color:var(--muted);letter-spacing:2px;margin-bottom:4px;font-family:'Cinzel',serif;">進度模式</div>
+        <div class="mode-toggle">
+          <button class="mode-btn active" id="modeEpBtn" onclick="setAddMode('episode')">單純集數</button>
+          <button class="mode-btn" id="modeChBtn" onclick="setAddMode('chapter')">章節＋小節</button>
+        </div>
+
+        <!-- 單純集數 -->
+        <div id="episodeFields">
+          <input type="number" id="inputTotal" placeholder="總集數" min="1">
+        </div>
+
+        <!-- 章節＋小節 -->
+        <div id="chapterFields" style="display:none;">
+          <div class="chapter-grid">
+            <div class="chapter-row">
+              <div class="chapter-label">總章數</div>
+              <input type="number" id="inputTotalChapters" placeholder="例：8" min="1" style="flex:1;">
+            </div>
+            <div class="chapter-row">
+              <div class="chapter-label">每章小節</div>
+              <input type="number" id="inputSectionsPerChapter" placeholder="例：5（平均）" min="1" style="flex:1;">
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--muted);letter-spacing:1px;margin-top:-4px;">總小節數 = 章數 × 每章小節數</div>
+        </div>
       </div>
       <button class="btn-primary" onclick="addCourse()">＋ 加入學習地圖</button>
     </div>
@@ -577,8 +615,6 @@ input[type=range]::-webkit-slider-thumb{
       <button class="rcat" onclick="setRCat('life',this)">生命智慧</button>
       <button class="rcat" onclick="setRCat('gratitude',this)">感恩覺察</button>
     </div>
-
-    <!-- 分類模式：提示＋輸入 -->
     <div id="reflectWriteArea">
       <div class="reflect-card">
         <div class="reflect-tag" id="reflectTag">靈魂清理</div>
@@ -594,12 +630,9 @@ input[type=range]::-webkit-slider-thumb{
       </div>
       <button class="btn-primary" style="margin-top:10px" onclick="saveReflectEntry()">✦ 儲存這筆反思</button>
     </div>
-
-    <!-- 全部模式：顯示所有記錄 -->
     <div id="reflectAllArea" style="display:none">
       <div id="reflectEntriesList"></div>
     </div>
-
   </div>
 </div>
 
@@ -611,8 +644,6 @@ input[type=range]::-webkit-slider-thumb{
     <button onclick="showReadingTab('review')" id="reviewTabBtn" style="margin-left:auto;background:none;border:none;font-family:'Noto Serif TC',serif;font-size:11px;letter-spacing:2px;color:var(--gold);cursor:pointer;">年度覆盤</button>
   </div>
   <div class="screen-scroll" id="readingScroll">
-
-    <!-- 新增書本 -->
     <div id="readingAddArea">
       <div class="add-form">
         <div class="form-label">ADD BOOK · 新增書目</div>
@@ -635,12 +666,9 @@ input[type=range]::-webkit-slider-thumb{
       </div>
       <div id="bookList"></div>
     </div>
-
-    <!-- 年度覆盤 -->
     <div id="readingReviewArea" style="display:none">
       <div id="reviewContent"></div>
     </div>
-
   </div>
 </div>
 
@@ -650,33 +678,31 @@ input[type=range]::-webkit-slider-thumb{
     <div class="modal-title">BOOK DETAIL · 書本詳情</div>
     <div id="bookModalName" style="font-size:17px;margin-bottom:4px;color:var(--text);"></div>
     <div id="bookModalMeta" style="font-size:12px;color:var(--muted);margin-bottom:14px;letter-spacing:1px;"></div>
-
     <div class="slider-row">
       <div class="slider-meta"><span>閱讀進度（頁）</span><span id="bookSliderVal">0</span></div>
       <input type="range" id="bookProgressSlider" min="0" max="100" value="0"
         oninput="document.getElementById('bookSliderVal').textContent=this.value">
     </div>
-
     <div style="margin-bottom:10px;">
       <div style="font-size:11px;letter-spacing:2px;color:var(--gold);margin-bottom:6px;font-family:'Cinzel',serif;">QUOTE · 金句</div>
       <textarea id="bookQuoteInput" placeholder="記下這次讀到的金句⋯⋯" rows="3" style="width:100%;resize:none;"></textarea>
       <button onclick="addQuote()" style="margin-top:6px;width:100%;padding:8px;background:transparent;border:1px solid var(--border);color:var(--muted);font-family:'Noto Serif TC',serif;font-size:11px;letter-spacing:2px;cursor:pointer;border-radius:1px;">＋ 新增金句</button>
     </div>
-
     <div id="bookQuotesList" style="margin-bottom:14px;"></div>
-
     <div style="margin-bottom:10px;">
       <div style="font-size:11px;letter-spacing:2px;color:var(--gold);margin-bottom:6px;font-family:'Cinzel',serif;">INSIGHT · 洞見</div>
       <textarea id="bookInsightInput" placeholder="這本書給我的影響或洞見⋯⋯" rows="3" style="width:100%;resize:none;"></textarea>
     </div>
-
     <div style="margin-bottom:14px;">
       <div style="font-size:11px;letter-spacing:2px;color:var(--gold);margin-bottom:6px;font-family:'Cinzel',serif;">RATING · 評分</div>
       <div style="display:flex;gap:8px;">
-        ${[1,2,3,4,5].map(n=>`<button onclick="setRating(${n})" id="star${n}" style="font-size:22px;background:none;border:none;cursor:pointer;opacity:0.3;transition:opacity 0.2s;">★</button>`).join('')}
+        <button onclick="setRating(1)" id="star1" style="font-size:22px;background:none;border:none;cursor:pointer;opacity:0.3;transition:opacity 0.2s;">★</button>
+        <button onclick="setRating(2)" id="star2" style="font-size:22px;background:none;border:none;cursor:pointer;opacity:0.3;transition:opacity 0.2s;">★</button>
+        <button onclick="setRating(3)" id="star3" style="font-size:22px;background:none;border:none;cursor:pointer;opacity:0.3;transition:opacity 0.2s;">★</button>
+        <button onclick="setRating(4)" id="star4" style="font-size:22px;background:none;border:none;cursor:pointer;opacity:0.3;transition:opacity 0.2s;">★</button>
+        <button onclick="setRating(5)" id="star5" style="font-size:22px;background:none;border:none;cursor:pointer;opacity:0.3;transition:opacity 0.2s;">★</button>
       </div>
     </div>
-
     <div class="modal-actions">
       <button class="btn-mc btn-cancel2" onclick="closeBookModal()">關閉</button>
       <button class="btn-mc btn-confirm" onclick="saveBookDetail()">儲存</button>
@@ -706,23 +732,120 @@ input[type=range]::-webkit-slider-thumb{
 
 <!-- UPDATE MODAL -->
 <div class="modal-overlay" id="modalOverlay" onclick="closeModalOut(event)">
-  <div class="modal">
-    <div class="modal-title">UPDATE PROGRESS</div>
+  <div class="modal" style="max-height:85vh;overflow-y:auto;">
+    <div class="modal-title" id="modalModeLabel">UPDATE PROGRESS</div>
     <div class="modal-name" id="modalName"></div>
-    <div class="modal-platform" id="modalPlatform" style="font-size:11px;color:var(--muted);letter-spacing:1px;margin-bottom:12px;"></div>
-    <div class="slider-row">
-      <div class="slider-meta"><span>已看集數</span><span id="sliderVal">0</span></div>
-      <div style="display:flex;align-items:center;gap:12px;">
-        <button onclick="adjustProgress(-1)" style="width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:transparent;font-size:20px;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">－</button>
-        <input type="range" id="progressSlider" min="0" max="100" value="0" style="flex:1;"
-          oninput="document.getElementById('sliderVal').textContent=this.value">
-        <button onclick="adjustProgress(1)" style="width:36px;height:36px;border-radius:50%;border:1px solid var(--gold);background:transparent;font-size:20px;color:var(--gold);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">＋</button>
+    <div id="modalPlatform" style="font-size:11px;color:var(--muted);letter-spacing:1px;margin-bottom:12px;"></div>
+
+    <!-- 單純集數模式 -->
+    <div id="modalEpisodeArea">
+      <div class="slider-row">
+        <div class="slider-meta"><span>已看集數</span><span id="sliderVal">0</span></div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <button onclick="adjustProgress(-1)" style="width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:transparent;font-size:20px;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">－</button>
+          <input type="range" id="progressSlider" min="0" max="100" value="0" style="flex:1;"
+            oninput="document.getElementById('sliderVal').textContent=this.value">
+          <button onclick="adjustProgress(1)" style="width:36px;height:36px;border-radius:50%;border:1px solid var(--gold);background:transparent;font-size:20px;color:var(--gold);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">＋</button>
+        </div>
       </div>
     </div>
+
+    <!-- 章節模式 -->
+    <div id="modalChapterArea" style="display:none;">
+      <div style="background:rgba(160,120,40,0.06);border:1px solid var(--border);border-radius:2px;padding:12px;margin-bottom:14px;">
+        <div style="font-size:13px;color:var(--gold);letter-spacing:2px;text-align:center;font-family:'Cinzel',serif;" id="modalChapterDisplay">第 1 章 第 1 節</div>
+        <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:4px;letter-spacing:1px;" id="modalChapterPct">總進度 0%</div>
+      </div>
+      <div style="display:flex;gap:12px;margin-bottom:12px;">
+        <div style="flex:1;">
+          <div style="font-size:11px;color:var(--muted);letter-spacing:1px;margin-bottom:6px;">目前章數</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <button onclick="adjustChapter('chapter',-1)" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:transparent;font-size:18px;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;">－</button>
+            <input type="number" id="modalCurrentChapter" min="1" value="1" style="text-align:center;font-size:16px;" oninput="updateChapterDisplay()">
+            <button onclick="adjustChapter('chapter',1)" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--gold);background:transparent;font-size:18px;color:var(--gold);cursor:pointer;display:flex;align-items:center;justify-content:center;">＋</button>
+          </div>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:11px;color:var(--muted);letter-spacing:1px;margin-bottom:6px;">目前小節</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <button onclick="adjustChapter('section',-1)" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:transparent;font-size:18px;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;">－</button>
+            <input type="number" id="modalCurrentSection" min="1" value="1" style="text-align:center;font-size:16px;" oninput="updateChapterDisplay()">
+            <button onclick="adjustChapter('section',1)" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--gold);background:transparent;font-size:18px;color:var(--gold);cursor:pointer;display:flex;align-items:center;justify-content:center;">＋</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <input type="text" id="modalNote" placeholder="這次學到了什麼？（可選）">
     <div class="modal-actions">
       <button class="btn-mc btn-cancel2" onclick="closeModal()">取消</button>
       <button class="btn-mc btn-confirm" onclick="saveProgress()">記錄進度</button>
+    </div>
+  </div>
+</div>
+
+<!-- 課程編輯 Modal -->
+<div class="modal-overlay" id="editCourseOverlay" onclick="closeEditCourseOut(event)">
+  <div class="modal" style="max-height:85vh;overflow-y:auto;">
+    <div class="modal-title">EDIT COURSE · 編輯課程</div>
+    <div class="f-col" style="margin-bottom:14px;">
+      <div style="font-size:11px;color:var(--muted);letter-spacing:1px;margin-bottom:2px;">課程名稱</div>
+      <input type="text" id="editName" placeholder="課程名稱">
+
+      <div style="font-size:11px;color:var(--muted);letter-spacing:1px;margin-bottom:2px;margin-top:4px;">類型</div>
+      <div class="f-row">
+        <select id="editCat" onchange="toggleEditOtherNote(this.value)" style="flex:1;">
+          <option value="古典中醫">古典中醫</option>
+          <option value="易經">易經</option>
+          <option value="奧修禪卡">奧修禪卡</option>
+          <option value="筆記輸出">筆記輸出</option>
+          <option value="其他">其他</option>
+        </select>
+      </div>
+      <input type="text" id="editOtherNote" placeholder="類別備註" style="display:none;">
+
+      <div style="font-size:11px;color:var(--muted);letter-spacing:1px;margin-bottom:2px;margin-top:4px;">上課平台</div>
+      <select id="editPlatform" onchange="toggleEditPlatformOther()">
+        <option value="">不指定</option>
+        <option value="Press Play ACADEMY">Press Play ACADEMY</option>
+        <option value="知識衛星">知識衛星</option>
+        <option value="孜孜">孜孜</option>
+        <option value="ShiFu">ShiFu</option>
+        <option value="電端中醫">電端中醫</option>
+        <option value="YouTube">YouTube</option>
+        <option value="黃庭書院">黃庭書院</option>
+        <option value="其他平台">其他（自行輸入）</option>
+      </select>
+      <input type="text" id="editPlatformOther" placeholder="請輸入平台名稱" style="display:none;">
+
+      <div style="font-size:11px;color:var(--muted);letter-spacing:1px;margin-bottom:4px;margin-top:4px;">進度模式</div>
+      <div class="mode-toggle">
+        <button class="mode-btn active" id="editModeEpBtn" onclick="setEditMode('episode')">單純集數</button>
+        <button class="mode-btn" id="editModeChBtn" onclick="setEditMode('chapter')">章節＋小節</button>
+      </div>
+
+      <!-- 單純集數 -->
+      <div id="editEpisodeFields">
+        <input type="number" id="editTotal" placeholder="總集數" min="1">
+      </div>
+
+      <!-- 章節＋小節 -->
+      <div id="editChapterFields" style="display:none;">
+        <div class="chapter-grid" style="margin-top:8px;">
+          <div class="chapter-row">
+            <div class="chapter-label">總章數</div>
+            <input type="number" id="editTotalChapters" placeholder="例：8" min="1" style="flex:1;">
+          </div>
+          <div class="chapter-row">
+            <div class="chapter-label">每章小節</div>
+            <input type="number" id="editSectionsPerChapter" placeholder="例：5" min="1" style="flex:1;">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-mc btn-cancel2" onclick="closeEditCourse()">取消</button>
+      <button class="btn-mc btn-confirm" onclick="saveEditCourse()">儲存更改</button>
     </div>
   </div>
 </div>
@@ -733,8 +856,11 @@ input[type=range]::-webkit-slider-thumb{
 // ── DATA ──
 let courses = JSON.parse(localStorage.getItem('myspace_courses') || '[]');
 let editingId = null;
+let editingCourseId = null;
 let currentRCat = 'all';
 let currentRIdx = -1;
+let addMode = 'episode'; // 'episode' | 'chapter'
+let editMode = 'episode';
 
 // ── PROMPTS ──
 const prompts = {
@@ -818,14 +944,12 @@ function autoSaveJournal(){
 
 // ── REFLECT ──
 let reflectEntries = JSON.parse(localStorage.getItem('reflect_entries') || '[]');
-
 function saveReflectEntries(){ localStorage.setItem('reflect_entries', JSON.stringify(reflectEntries)); }
 
 function setRCat(cat, el){
   currentRCat = cat;
   document.querySelectorAll('.rcat').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
-
   if(cat === 'all'){
     document.getElementById('reflectWriteArea').style.display = 'none';
     document.getElementById('reflectAllArea').style.display = 'block';
@@ -939,10 +1063,35 @@ function saveCourses(){ localStorage.setItem('myspace_courses', JSON.stringify(c
 function toggleOtherNote(val){
   document.getElementById('inputOtherNote').style.display = val==='其他'?'block':'none';
 }
-
 function togglePlatformOther(){
   const sel = document.getElementById('inputPlatform');
   document.getElementById('inputPlatformOther').style.display = sel.value==='其他平台'?'block':'none';
+}
+
+// ── 新增模式切換 ──
+function setAddMode(mode){
+  addMode = mode;
+  document.getElementById('modeEpBtn').classList.toggle('active', mode==='episode');
+  document.getElementById('modeChBtn').classList.toggle('active', mode==='chapter');
+  document.getElementById('episodeFields').style.display = mode==='episode'?'block':'none';
+  document.getElementById('chapterFields').style.display = mode==='chapter'?'block':'none';
+}
+
+// ── 編輯模式切換 ──
+function setEditMode(mode){
+  editMode = mode;
+  document.getElementById('editModeEpBtn').classList.toggle('active', mode==='episode');
+  document.getElementById('editModeChBtn').classList.toggle('active', mode==='chapter');
+  document.getElementById('editEpisodeFields').style.display = mode==='episode'?'block':'none';
+  document.getElementById('editChapterFields').style.display = mode==='chapter'?'block':'none';
+}
+
+function toggleEditOtherNote(val){
+  document.getElementById('editOtherNote').style.display = val==='其他'?'block':'none';
+}
+function toggleEditPlatformOther(){
+  const sel = document.getElementById('editPlatform');
+  document.getElementById('editPlatformOther').style.display = sel.value==='其他平台'?'block':'none';
 }
 
 function adjustProgress(delta){
@@ -952,39 +1101,112 @@ function adjustProgress(delta){
   document.getElementById('sliderVal').textContent = newVal;
 }
 
+function adjustChapter(field, delta){
+  const c = courses.find(x=>x.id===editingId);
+  if(!c) return;
+  if(field==='chapter'){
+    const el = document.getElementById('modalCurrentChapter');
+    const newVal = Math.max(1, Math.min(c.totalChapters||99, parseInt(el.value||1)+delta));
+    el.value = newVal;
+  } else {
+    const el = document.getElementById('modalCurrentSection');
+    const newVal = Math.max(1, Math.min(c.sectionsPerChapter||99, parseInt(el.value||1)+delta));
+    el.value = newVal;
+  }
+  updateChapterDisplay();
+}
+
+function updateChapterDisplay(){
+  const c = courses.find(x=>x.id===editingId);
+  if(!c) return;
+  const ch = parseInt(document.getElementById('modalCurrentChapter').value)||1;
+  const sec = parseInt(document.getElementById('modalCurrentSection').value)||1;
+  document.getElementById('modalChapterDisplay').textContent = `第 ${ch} 章  第 ${sec} 節`;
+  // 計算總進度
+  const totalSections = (c.totalChapters||1) * (c.sectionsPerChapter||1);
+  const doneSections = (ch-1)*(c.sectionsPerChapter||1) + sec;
+  const pct = Math.min(100, Math.round((doneSections/totalSections)*100));
+  document.getElementById('modalChapterPct').textContent = `總進度 ${pct}%　（${doneSections} / ${totalSections} 小節）`;
+}
+
 function addCourse(){
   const name = document.getElementById('inputName').value.trim();
   const cat = document.getElementById('inputCat').value;
   const otherNote = document.getElementById('inputOtherNote').value.trim();
-  const total = parseInt(document.getElementById('inputTotal').value)||0;
   const platformSel = document.getElementById('inputPlatform').value;
   const platformOther = document.getElementById('inputPlatformOther').value.trim();
   const platform = platformSel==='其他平台' ? platformOther : platformSel;
   if(!name){showToast('請輸入課程名稱');return;}
-  courses.unshift({
-    id:Date.now(), name, cat,
+
+  let courseData = {
+    id: Date.now(), name, cat,
     catNote: cat==='其他' ? otherNote : '',
-    platform, total, watched:0, progress:0, lastDate:null, lastNote:''
-  });
+    platform,
+    progressMode: addMode,
+    lastDate: null, lastNote: ''
+  };
+
+  if(addMode === 'episode'){
+    const total = parseInt(document.getElementById('inputTotal').value)||0;
+    courseData.total = total;
+    courseData.watched = 0;
+    courseData.progress = 0;
+  } else {
+    const totalChapters = parseInt(document.getElementById('inputTotalChapters').value)||1;
+    const sectionsPerChapter = parseInt(document.getElementById('inputSectionsPerChapter').value)||1;
+    courseData.totalChapters = totalChapters;
+    courseData.sectionsPerChapter = sectionsPerChapter;
+    courseData.total = totalChapters * sectionsPerChapter;
+    courseData.watched = 0;
+    courseData.progress = 0;
+    courseData.currentChapter = 1;
+    courseData.currentSection = 1;
+  }
+
+  courses.unshift(courseData);
+  // reset form
   document.getElementById('inputName').value='';
   document.getElementById('inputTotal').value='';
   document.getElementById('inputOtherNote').value='';
   document.getElementById('inputPlatform').value='';
   document.getElementById('inputPlatformOther').value='';
+  document.getElementById('inputTotalChapters').value='';
+  document.getElementById('inputSectionsPerChapter').value='';
   document.getElementById('inputOtherNote').style.display='none';
   document.getElementById('inputPlatformOther').style.display='none';
+  setAddMode('episode');
   saveCourses(); renderFullCourses(); renderHomeCourses(); showToast('✦ 課程已加入');
+}
+
+// ── 課程進度百分比計算 ──
+function getCourseProgress(c){
+  if(c.progressMode === 'chapter'){
+    const totalSections = (c.totalChapters||1) * (c.sectionsPerChapter||1);
+    const doneSections = ((c.currentChapter||1)-1)*(c.sectionsPerChapter||1) + (c.currentSection||1);
+    return Math.min(100, Math.round((doneSections/totalSections)*100));
+  }
+  return c.total>0 ? Math.round((c.watched/c.total)*100) : c.progress||0;
+}
+
+function getCourseProgressLabel(c){
+  if(c.progressMode === 'chapter'){
+    const pct = getCourseProgress(c);
+    const totalSections = (c.totalChapters||1) * (c.sectionsPerChapter||1);
+    const doneSections = ((c.currentChapter||1)-1)*(c.sectionsPerChapter||1) + (c.currentSection||1);
+    return `第 ${c.currentChapter||1} 章 第 ${c.currentSection||1} 節　${doneSections}/${totalSections} 小節`;
+  }
+  return c.total>0 ? `${c.watched}/${c.total} 集` : '';
 }
 
 function renderHomeCourses(){
   const el=document.getElementById('homeCourseList');
-  const active=courses.filter(c=>c.progress<100).slice(0,3);
+  const active=courses.filter(c=>getCourseProgress(c)<100).slice(0,3);
   if(active.length===0){
     el.innerHTML=`<div class="empty-mini" onclick="showScreen('course')">＋ 點此新增課程</div>`;
     return;
   }
   el.innerHTML=active.map(c=>{
-    const pct=c.total>0?Math.round((c.watched/c.total)*100):c.progress;
+    const pct=getCourseProgress(c);
     const r=18;const circ=2*Math.PI*r;const offset=circ*(1-pct/100);
     return`<div class="mini-course" onclick="openModal(${c.id})">
       <div class="mini-ring">
@@ -1004,41 +1226,13 @@ function renderHomeCourses(){
   }).join('');
 }
 
-function renderHomeBooks(){
-  const el = document.getElementById('homeBookList');
-  if(!el) return;
-  const active = books.filter(b=>b.status!=='done').slice(0,3);
-  if(active.length===0){
-    el.innerHTML=`<div class="empty-mini" onclick="showScreen('reading')">＋ 點此新增書目</div>`;
-    return;
-  }
-  el.innerHTML = active.map(b=>{
-    const pct = b.totalPages>0?Math.round((b.currentPage/b.totalPages)*100):0;
-    const r=18;const circ=2*Math.PI*r;const offset=circ*(1-pct/100);
-    return`<div class="mini-course" onclick="openBookModal(${b.id})">
-      <div class="mini-ring">
-        <svg width="40" height="40" viewBox="0 0 40 40">
-          <circle class="ring-bg" cx="20" cy="20" r="${r}"/>
-          <circle class="ring-fill" cx="20" cy="20" r="${r}"
-            stroke-dasharray="${circ}" stroke-dashoffset="${offset}"/>
-        </svg>
-        <div class="ring-pct">${pct}%</div>
-      </div>
-      <div class="mini-info">
-        <div class="mini-name">${b.title}</div>
-        <div class="mini-meta">${b.author||b.type} · 點此更新進度</div>
-      </div>
-      <div class="mini-tag tag-${b.type}">${b.type}</div>
-    </div>`;
-  }).join('');
-}
-
 function renderFullCourses(){
   const el=document.getElementById('fullCourseList');
   if(courses.length===0){el.innerHTML='';return;}
   el.innerHTML=courses.map(c=>{
-    const pct=c.total>0?Math.round((c.watched/c.total)*100):c.progress;
-    return`<div class="course-card${pct===100?' done':''}">
+    const pct=getCourseProgress(c);
+    const label=getCourseProgressLabel(c);
+    return`<div class="course-card">
       <div class="cc-top">
         <div style="flex:1;">
           <div class="cc-name">${c.name}</div>
@@ -1047,7 +1241,7 @@ function renderFullCourses(){
         <div class="cc-tag tag-${c.cat}">${c.cat}</div>
       </div>
       <div class="pb-wrap">
-        <div class="pb-meta"><span>${c.total>0?`${c.watched}/${c.total}集`:''}</span><span>${pct}%</span></div>
+        <div class="pb-meta"><span>${label}</span><span>${pct}%</span></div>
         <div class="pb"><div class="pb-fill" style="width:${pct}%"></div></div>
       </div>
       <div class="cc-date">${c.lastDate?`上次學習：<span>${c.lastDate}</span>`:'尚未開始'}</div>
@@ -1056,6 +1250,7 @@ function renderFullCourses(){
         ${pct<100
           ?`<button class="btn-xs primary" onclick="openModal(${c.id})">✦ 更新進度</button>`
           :`<button class="btn-xs" style="color:#7a9a6a;border-color:#7a9a6a">✓ 完成</button>`}
+        <button class="btn-xs" onclick="openEditCourse(${c.id})">✎ 編輯</button>
         <button class="btn-xs danger" onclick="deleteCourse(${c.id}, this)">刪除</button>
       </div>
     </div>`;
@@ -1083,33 +1278,151 @@ function deleteCourse(id, btn){
   }
 }
 
-// ── MODAL ──
+// ── 編輯課程 Modal ──
+function openEditCourse(id){
+  editingCourseId = id;
+  const c = courses.find(x=>x.id===id);
+  document.getElementById('editName').value = c.name;
+  document.getElementById('editCat').value = c.cat;
+  document.getElementById('editOtherNote').value = c.catNote||'';
+  document.getElementById('editOtherNote').style.display = c.cat==='其他'?'block':'none';
+
+  // platform
+  const knownPlatforms = ['Press Play ACADEMY','知識衛星','孜孜','ShiFu','電端中醫','YouTube','黃庭書院'];
+  if(!c.platform){
+    document.getElementById('editPlatform').value = '';
+    document.getElementById('editPlatformOther').style.display='none';
+  } else if(knownPlatforms.includes(c.platform)){
+    document.getElementById('editPlatform').value = c.platform;
+    document.getElementById('editPlatformOther').style.display='none';
+  } else {
+    document.getElementById('editPlatform').value = '其他平台';
+    document.getElementById('editPlatformOther').value = c.platform;
+    document.getElementById('editPlatformOther').style.display='block';
+  }
+
+  // mode
+  const mode = c.progressMode || 'episode';
+  setEditMode(mode);
+  if(mode === 'episode'){
+    document.getElementById('editTotal').value = c.total||'';
+  } else {
+    document.getElementById('editTotalChapters').value = c.totalChapters||'';
+    document.getElementById('editSectionsPerChapter').value = c.sectionsPerChapter||'';
+  }
+
+  document.getElementById('editCourseOverlay').classList.add('show');
+}
+
+function saveEditCourse(){
+  const c = courses.find(x=>x.id===editingCourseId);
+  if(!c) return;
+
+  const name = document.getElementById('editName').value.trim();
+  if(!name){ showToast('請輸入課程名稱'); return; }
+
+  const cat = document.getElementById('editCat').value;
+  const catNote = cat==='其他' ? document.getElementById('editOtherNote').value.trim() : '';
+  const platformSel = document.getElementById('editPlatform').value;
+  const platformOther = document.getElementById('editPlatformOther').value.trim();
+  const platform = platformSel==='其他平台' ? platformOther : platformSel;
+
+  c.name = name;
+  c.cat = cat;
+  c.catNote = catNote;
+  c.platform = platform;
+  c.progressMode = editMode;
+
+  if(editMode === 'episode'){
+    const newTotal = parseInt(document.getElementById('editTotal').value)||0;
+    c.total = newTotal;
+    // 如果從章節模式切換回來，重設
+    if(c.progressMode !== 'episode'){
+      c.watched = 0; c.progress = 0;
+    }
+    delete c.totalChapters; delete c.sectionsPerChapter;
+    delete c.currentChapter; delete c.currentSection;
+  } else {
+    const totalChapters = parseInt(document.getElementById('editTotalChapters').value)||1;
+    const sectionsPerChapter = parseInt(document.getElementById('editSectionsPerChapter').value)||1;
+    c.totalChapters = totalChapters;
+    c.sectionsPerChapter = sectionsPerChapter;
+    c.total = totalChapters * sectionsPerChapter;
+    if(!c.currentChapter) c.currentChapter = 1;
+    if(!c.currentSection) c.currentSection = 1;
+    delete c.watched;
+  }
+
+  closeEditCourse();
+  saveCourses(); renderFullCourses(); renderHomeCourses();
+  showToast('✦ 課程已更新');
+}
+
+function closeEditCourse(){
+  document.getElementById('editCourseOverlay').classList.remove('show');
+  editingCourseId = null;
+}
+function closeEditCourseOut(e){
+  if(e.target===document.getElementById('editCourseOverlay')) closeEditCourse();
+}
+
+// ── MODAL (更新進度) ──
 function openModal(id){
   editingId=id;
   const c=courses.find(x=>x.id===id);
   document.getElementById('modalName').textContent=c.name;
   const meta = [c.platform, c.catNote].filter(Boolean).join(' · ');
   document.getElementById('modalPlatform').textContent = meta;
-  const sl=document.getElementById('progressSlider');
-  sl.max=c.total>0?c.total:100;
-  sl.value=c.total>0?c.watched:c.progress;
-  document.getElementById('sliderVal').textContent=sl.value;
   document.getElementById('modalNote').value='';
+
+  const mode = c.progressMode || 'episode';
+  document.getElementById('modalEpisodeArea').style.display = mode==='episode'?'block':'none';
+  document.getElementById('modalChapterArea').style.display = mode==='chapter'?'block':'none';
+  document.getElementById('modalModeLabel').textContent = mode==='chapter'?'UPDATE · 更新章節進度':'UPDATE PROGRESS';
+
+  if(mode === 'episode'){
+    const sl=document.getElementById('progressSlider');
+    sl.max=c.total>0?c.total:100;
+    sl.value=c.total>0?c.watched:c.progress||0;
+    document.getElementById('sliderVal').textContent=sl.value;
+  } else {
+    document.getElementById('modalCurrentChapter').value = c.currentChapter||1;
+    document.getElementById('modalCurrentSection').value = c.currentSection||1;
+    updateChapterDisplay();
+  }
+
   document.getElementById('modalOverlay').classList.add('show');
 }
+
 function closeModal(){document.getElementById('modalOverlay').classList.remove('show');editingId=null;}
 function closeModalOut(e){if(e.target===document.getElementById('modalOverlay'))closeModal();}
+
 function saveProgress(){
   if(!editingId)return;
   const c=courses.find(x=>x.id===editingId);
-  const val=parseInt(document.getElementById('progressSlider').value);
   const note=document.getElementById('modalNote').value.trim();
-  if(c.total>0){c.watched=val;c.progress=Math.round((val/c.total)*100);}
-  else{c.progress=val;}
+  const mode = c.progressMode || 'episode';
+
+  if(mode === 'episode'){
+    const val=parseInt(document.getElementById('progressSlider').value);
+    if(c.total>0){c.watched=val;c.progress=Math.round((val/c.total)*100);}
+    else{c.progress=val;}
+  } else {
+    const ch = parseInt(document.getElementById('modalCurrentChapter').value)||1;
+    const sec = parseInt(document.getElementById('modalCurrentSection').value)||1;
+    c.currentChapter = ch;
+    c.currentSection = sec;
+    const totalSections = (c.totalChapters||1) * (c.sectionsPerChapter||1);
+    const doneSections = (ch-1)*(c.sectionsPerChapter||1) + sec;
+    c.progress = Math.min(100, Math.round((doneSections/totalSections)*100));
+    c.watched = doneSections;
+  }
+
   c.lastDate=new Date().toLocaleDateString('zh-TW');
   if(note)c.lastNote=note;
   closeModal();saveCourses();renderFullCourses();renderHomeCourses();
-  showToast(c.progress===100?'🎉 課程完成！':'✦ 進度已記錄');
+  const pct = getCourseProgress(c);
+  showToast(pct===100?'🎉 課程完成！':'✦ 進度已記錄');
 }
 
 // ── NAVIGATION ──
@@ -1122,7 +1435,6 @@ function showScreen(name){
   } else if(name==='reflect'){
     document.getElementById('reflectScreen').classList.add('active');
     document.getElementById('nav-reflect').classList.add('active');
-    // 如果有記錄，預設顯示全部；否則顯示寫入介面
     if(reflectEntries.length>0){
       const allBtn = document.querySelector('.rcat');
       setRCat('all', allBtn);
@@ -1227,6 +1539,35 @@ function renderBookList(){
   }).join('');
 }
 
+function renderHomeBooks(){
+  const el = document.getElementById('homeBookList');
+  if(!el) return;
+  const active = books.filter(b=>b.status!=='done').slice(0,3);
+  if(active.length===0){
+    el.innerHTML=`<div class="empty-mini" onclick="showScreen('reading')">＋ 點此新增書目</div>`;
+    return;
+  }
+  el.innerHTML = active.map(b=>{
+    const pct = b.totalPages>0?Math.round((b.currentPage/b.totalPages)*100):0;
+    const r=18;const circ=2*Math.PI*r;const offset=circ*(1-pct/100);
+    return`<div class="mini-course" onclick="openBookModal(${b.id})">
+      <div class="mini-ring">
+        <svg width="40" height="40" viewBox="0 0 40 40">
+          <circle class="ring-bg" cx="20" cy="20" r="${r}"/>
+          <circle class="ring-fill" cx="20" cy="20" r="${r}"
+            stroke-dasharray="${circ}" stroke-dashoffset="${offset}"/>
+        </svg>
+        <div class="ring-pct">${pct}%</div>
+      </div>
+      <div class="mini-info">
+        <div class="mini-name">${b.title}</div>
+        <div class="mini-meta">${b.author||b.type} · 點此更新進度</div>
+      </div>
+      <div class="mini-tag tag-${b.type}">${b.type}</div>
+    </div>`;
+  }).join('');
+}
+
 function openBookModal(id){
   editingBookId = id;
   const b = books.find(x=>x.id===id);
@@ -1271,10 +1612,7 @@ function removeQuote(idx){
   renderQuotesList(b.quotes);
 }
 
-function setRating(n){
-  currentRating = n;
-  updateStars();
-}
+function setRating(n){ currentRating = n; updateStars(); }
 function updateStars(){
   for(let i=1;i<=5;i++){
     const s = document.getElementById('star'+i);
@@ -1295,9 +1633,6 @@ function saveBookDetail(){
 function closeBookModal(){ document.getElementById('bookModalOverlay').classList.remove('show'); editingBookId=null; }
 function closeBookModalOut(e){ if(e.target===document.getElementById('bookModalOverlay')) closeBookModal(); }
 
-
-
-
 function renderReview(){
   const el = document.getElementById('reviewContent');
   const year = new Date().getFullYear();
@@ -1306,7 +1641,6 @@ function renderReview(){
     return;
   }
   const done = books.filter(b=>b.status==='done');
-  const reading = books.filter(b=>b.status==='reading');
   const avgRating = done.filter(b=>b.rating>0).length>0
     ? (done.filter(b=>b.rating>0).reduce((a,b)=>a+b.rating,0)/done.filter(b=>b.rating>0).length).toFixed(1)
     : '—';
@@ -1337,12 +1671,10 @@ function renderReview(){
         </div>
       </div>
     </div>
-
     ${topType?`<div style="background:var(--card);border:1px solid var(--border);border-radius:2px;padding:16px;margin-bottom:14px;">
       <div style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:3px;color:var(--gold);margin-bottom:10px;">FAVOURITE GENRE</div>
       <div style="font-size:16px;color:var(--text);">今年最常看的類型是<span style="color:var(--gold);"> ${topType[0]}</span>，共 ${topType[1]} 本。</div>
     </div>`:''}
-
     ${done.length>0?`<div style="background:var(--card);border:1px solid var(--border);border-radius:2px;padding:16px;margin-bottom:14px;">
       <div style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:3px;color:var(--gold);margin-bottom:12px;">COMPLETED · 完成書目</div>
       ${done.map(b=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">
@@ -1353,7 +1685,6 @@ function renderReview(){
         <div style="color:var(--gold);font-size:14px;">${'★'.repeat(b.rating||0)}</div>
       </div>`).join('')}
     </div>`:''}
-
     ${allQuotes.length>0?`<div style="background:var(--card);border:1px solid var(--border);border-radius:2px;padding:16px;margin-bottom:14px;">
       <div style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:3px;color:var(--gold);margin-bottom:12px;">QUOTES · 金句精選</div>
       ${allQuotes.slice(0,5).map(({q,title})=>`
@@ -1400,7 +1731,6 @@ function autoBackup(){
     books: JSON.parse(localStorage.getItem('myspace_books')||'[]'),
     journal: localStorage.getItem('journal_'+today)||''
   };
-  // 保留最近7天備份
   let backupLog = JSON.parse(localStorage.getItem('backup_log')||'[]');
   backupLog = backupLog.filter(d => d !== today);
   backupLog.unshift(today);
@@ -1448,7 +1778,6 @@ function importBackup(event){
       if(data.courses) localStorage.setItem('myspace_courses', JSON.stringify(data.courses));
       if(data.reflectEntries) localStorage.setItem('reflect_entries', JSON.stringify(data.reflectEntries));
       if(data.books) localStorage.setItem('myspace_books', JSON.stringify(data.books));
-      // reload data
       courses = JSON.parse(localStorage.getItem('myspace_courses')||'[]');
       reflectEntries = JSON.parse(localStorage.getItem('reflect_entries')||'[]');
       books = JSON.parse(localStorage.getItem('myspace_books')||'[]');
@@ -1474,7 +1803,6 @@ newReflect();
 autoBackup();
 updateBackupStatus();
 
-// restore home journal for today
 const homeJournalEntries = JSON.parse(localStorage.getItem('home_journal_entries')||'[]');
 const todayEntry = homeJournalEntries.find(e=>e.date===todayKey());
 if(todayEntry) document.getElementById('miniJournalText').value = todayEntry.text;
