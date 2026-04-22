@@ -908,11 +908,16 @@ function editEntry(id, newText){
 }
 
 function deleteEntry(id){
-  if(!confirm('確定刪除這筆反思？')) return;
-  reflectEntries = reflectEntries.filter(e => e.id !== id);
-  saveReflectEntries();
-  renderReflectEntries();
-  showToast('已刪除');
+  const btn = event.target;
+  if(btn.dataset.confirm==='1'){
+    reflectEntries = reflectEntries.filter(e=>e.id!==id);
+    saveReflectEntries(); renderReflectEntries(); renderHomeReflect(); showToast('已刪除');
+  } else {
+    btn.dataset.confirm='1';
+    btn.textContent='確定？';
+    btn.style.color='#c0392b';
+    setTimeout(()=>{ if(btn.dataset.confirm==='1'){ btn.dataset.confirm=''; btn.textContent='刪除'; btn.style.color=''; } },3000);
+  }
 }
 
 // ── COURSES ──
@@ -1043,9 +1048,27 @@ function renderFullCourses(){
 }
 
 function deleteCourse(id){
-  if(!confirm('確定刪除？'))return;
-  courses=courses.filter(c=>c.id!==id);
-  saveCourses();renderFullCourses();renderHomeCourses();showToast('已刪除');
+  const c = courses.find(x=>x.id===id);
+  if(!c) return;
+  // 第一次點變紅色確認，第二次才真的刪
+  const btn = event.target;
+  if(btn.dataset.confirm === '1'){
+    courses = courses.filter(c=>c.id!==id);
+    saveCourses(); renderFullCourses(); renderHomeCourses(); showToast('已刪除');
+  } else {
+    btn.dataset.confirm = '1';
+    btn.textContent = '確定刪除？';
+    btn.style.color = '#c0392b';
+    btn.style.borderColor = '#c0392b';
+    setTimeout(()=>{
+      if(btn.dataset.confirm==='1'){
+        btn.dataset.confirm='';
+        btn.textContent='刪除';
+        btn.style.color='';
+        btn.style.borderColor='';
+      }
+    }, 3000);
+  }
 }
 
 // ── MODAL ──
@@ -1261,9 +1284,16 @@ function closeBookModal(){ document.getElementById('bookModalOverlay').classList
 function closeBookModalOut(e){ if(e.target===document.getElementById('bookModalOverlay')) closeBookModal(); }
 
 function deleteBook(id){
-  if(!confirm('確定刪除這本書的記錄？')) return;
-  books = books.filter(b=>b.id!==id);
-  saveBooks(); renderBookList(); renderHomeBooks(); showToast('已刪除');
+  const btn = event.target;
+  if(btn.dataset.confirm==='1'){
+    books = books.filter(b=>b.id!==id);
+    saveBooks(); renderBookList(); renderHomeBooks(); showToast('已刪除');
+  } else {
+    btn.dataset.confirm='1';
+    btn.textContent='確定？';
+    btn.style.color='#c0392b';
+    setTimeout(()=>{ if(btn.dataset.confirm==='1'){ btn.dataset.confirm=''; btn.textContent='刪除'; btn.style.color=''; } },3000);
+  }
 }
 
 function renderReview(){
