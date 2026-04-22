@@ -896,7 +896,7 @@ function renderReflectEntries(){
       <div style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:8px;border-left:2px solid var(--border);padding-left:8px;line-height:1.6;">${e.prompt}</div>
       <textarea onchange="editEntry(${e.id}, this.value)" style="width:100%;background:rgba(0,0,0,0.02);border:1px solid var(--border);border-radius:1px;padding:10px;font-family:'Noto Serif TC',serif;font-size:15px;line-height:1.85;color:var(--text);letter-spacing:0.5px;resize:vertical;outline:none;min-height:80px;">${e.text}</textarea>
       <div style="text-align:right;margin-top:8px;">
-        <button onclick="deleteEntry(${e.id})" style="background:none;border:none;font-size:11px;color:var(--muted);cursor:pointer;letter-spacing:1px;font-family:'Noto Serif TC',serif;">刪除</button>
+        <button onclick="deleteEntry(${e.id}, this)" style="background:none;border:none;font-size:11px;color:var(--muted);cursor:pointer;letter-spacing:1px;font-family:'Noto Serif TC',serif;">刪除</button>
       </div>
     </div>
   `).join('');
@@ -907,11 +907,24 @@ function editEntry(id, newText){
   if(e){ e.text = newText; saveReflectEntries(); renderHomeReflect(); showToast('✦ 已更新'); }
 }
 
-function deleteEntry(id){
-  const btn = event.target;
+function deleteEntry(id, btn){
+  if(!btn) btn = event.target;
   if(btn.dataset.confirm==='1'){
     reflectEntries = reflectEntries.filter(e=>e.id!==id);
     saveReflectEntries(); renderReflectEntries(); renderHomeReflect(); showToast('已刪除');
+  } else {
+    btn.dataset.confirm='1';
+    btn.textContent='確定？';
+    btn.style.color='#c0392b';
+    setTimeout(()=>{ if(btn.dataset.confirm==='1'){ btn.dataset.confirm=''; btn.textContent='刪除'; btn.style.color=''; } },3000);
+  }
+}
+
+function deleteBook(id, btn){
+  if(!btn) btn = event.target;
+  if(btn.dataset.confirm==='1'){
+    books = books.filter(b=>b.id!==id);
+    saveBooks(); renderBookList(); renderHomeBooks(); showToast('已刪除');
   } else {
     btn.dataset.confirm='1';
     btn.textContent='確定？';
@@ -1041,19 +1054,16 @@ function renderFullCourses(){
         ${pct<100
           ?`<button class="btn-xs primary" onclick="openModal(${c.id})">✦ 更新進度</button>`
           :`<button class="btn-xs" style="color:#7a9a6a;border-color:#7a9a6a">✓ 完成</button>`}
-        <button class="btn-xs danger" onclick="deleteCourse(${c.id})">刪除</button>
+        <button class="btn-xs danger" onclick="deleteCourse(${c.id}, this)">刪除</button>
       </div>
     </div>`;
   }).join('');
 }
 
-function deleteCourse(id){
-  const c = courses.find(x=>x.id===id);
-  if(!c) return;
-  // 第一次點變紅色確認，第二次才真的刪
-  const btn = event.target;
+function deleteCourse(id, btn){
+  if(!btn) btn = event.target;
   if(btn.dataset.confirm === '1'){
-    courses = courses.filter(c=>c.id!==id);
+    courses = courses.filter(c => c.id !== id);
     saveCourses(); renderFullCourses(); renderHomeCourses(); showToast('已刪除');
   } else {
     btn.dataset.confirm = '1';
@@ -1207,7 +1217,7 @@ function renderBookList(){
         <span style="font-size:12px;color:var(--gold);letter-spacing:1px;">${stars}</span>
         <div style="display:flex;gap:8px;">
           <button onclick="openBookModal(${b.id})" style="background:none;border:1px solid var(--gold);color:var(--gold);padding:5px 12px;font-size:11px;letter-spacing:1px;font-family:'Noto Serif TC',serif;cursor:pointer;border-radius:1px;">✦ 編輯</button>
-          <button onclick="deleteBook(${b.id})" style="background:none;border:1px solid var(--border);color:var(--muted);padding:5px 10px;font-size:11px;letter-spacing:1px;font-family:'Noto Serif TC',serif;cursor:pointer;border-radius:1px;">刪除</button>
+          <button onclick="deleteBook(${b.id}, this)" style="background:none;border:1px solid var(--border);color:var(--muted);padding:5px 10px;font-size:11px;letter-spacing:1px;font-family:'Noto Serif TC',serif;cursor:pointer;border-radius:1px;">刪除</button>
         </div>
       </div>
       ${b.quotes.length>0?`<div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px;font-size:12px;color:var(--muted);font-style:italic;border-left:2px solid var(--border);padding-left:8px;line-height:1.7;">${b.quotes[0]}${b.quotes.length>1?`<span style="color:var(--gold);"> +${b.quotes.length-1} 句</span>`:''}</div>`:''}
