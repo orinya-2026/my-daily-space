@@ -3,8 +3,75 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>我的日常空間</title>
+<title>Orinya 的空間</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600&family=Cinzel:wght@400;600&family=Cormorant+Garamond:ital,wght@0,300;1,300&display=swap" rel="stylesheet">
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCPG-mE6nheRHryaXrRXTiGuia-uxBqVmc",
+  authDomain: "my-daily-space.firebaseapp.com",
+  projectId: "my-daily-space",
+  storageBucket: "my-daily-space.firebasestorage.app",
+  messagingSenderId: "576582697654",
+  appId: "1:576582697654:web:5b93c4f8adbcaffd3f9c17"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const USER_ID = 'orinya'; // 固定用戶ID
+
+// ── Firebase 寫入 ──
+async function fbSave(key, data){
+  try {
+    await setDoc(doc(db, 'userdata', USER_ID, 'collections', key), { data: JSON.stringify(data) });
+  } catch(e){ console.warn('Firebase save failed:', e); }
+}
+
+// ── Firebase 即時監聽，有更新自動同步到 localStorage 並刷新畫面 ──
+function fbListen(key, localKey, renderFn){
+  onSnapshot(doc(db, 'userdata', USER_ID, 'collections', key), (snap)=>{
+    if(snap.exists()){
+      const raw = snap.data().data;
+      const current = localStorage.getItem(localKey);
+      if(raw !== current){
+        localStorage.setItem(localKey, raw);
+        renderFn();
+      }
+    }
+  });
+}
+
+// 掛載到 window 讓主 script 使用
+window.fbSave = fbSave;
+window.fbReady = true;
+
+// 等主 script 載入完再開始監聽
+window.addEventListener('load', ()=>{
+  setTimeout(()=>{
+    fbListen('courses', 'myspace_courses', ()=>{
+      courses = JSON.parse(localStorage.getItem('myspace_courses')||'[]');
+      renderHomeCourses(); renderFullCourses();
+    });
+    fbListen('reflectEntries', 'reflect_entries', ()=>{
+      reflectEntries = JSON.parse(localStorage.getItem('reflect_entries')||'[]');
+      renderHomeReflect(); renderCalendar();
+    });
+    fbListen('books', 'myspace_books', ()=>{
+      books = JSON.parse(localStorage.getItem('myspace_books')||'[]');
+      renderBookList(); renderHomeBooks();
+    });
+    fbListen('cardlib', 'myspace_cardlib', ()=>{
+      renderTodayCards(); renderCalendar();
+    });
+    // 顯示同步狀態
+    document.getElementById('syncStatus').textContent = '☁ 已連線';
+    document.getElementById('syncStatus').style.color = '#7a9a6a';
+  }, 1000);
+});
+</script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 input, textarea, select {
@@ -574,14 +641,12 @@ input[type=range]::-webkit-slider-thumb{
 <div class="screen active" id="homeScreen">
   <div class="home-header">
     <div class="greeting" id="greetingText">Good Morning</div>
-    <div class="home-title">我的日常空間</div>
+    <div class="home-title">Orinya 的空間</div>
     <div class="gold-line"></div>
     <div class="home-date" id="homeDateText"></div>
-    <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:10px;">
-      <div id="backupStatus" style="font-size:10px;color:var(--muted);letter-spacing:1px;"></div>
-      <button onclick="exportBackup()" style="background:none;border:1px solid var(--border);color:var(--gold);font-family:'Noto Serif TC',serif;font-size:10px;letter-spacing:2px;padding:4px 12px;cursor:pointer;border-radius:1px;transition:all 0.3s;">匯出備份</button>
-      <label style="background:none;border:1px solid var(--border);color:var(--muted);font-family:'Noto Serif TC',serif;font-size:10px;letter-spacing:2px;padding:4px 12px;cursor:pointer;border-radius:1px;">匯入備份<input type="file" accept=".json" onchange="importBackup(event)" style="display:none;"></label>
-    </div>
+
+    <!-- 今日牌卡 -->
+    <div id="todayCardArea" style="margin-top:14px;padding:0 4px;"></div>
   </div>
 
   <div class="home-scroll">
@@ -618,6 +683,17 @@ input[type=range]::-webkit-slider-thumb{
       <button onclick="showScreen('reading')" style="background:none;border:none;font-size:11px;color:var(--gold);letter-spacing:1px;cursor:pointer;font-family:'Noto Serif TC',serif;">全部 →</button>
     </div>
     <div id="homeBookList"></div>
+
+    <!-- 備份區 -->
+    <div style="margin-top:20px;margin-bottom:8px;padding:14px 16px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;">
+      <div style="width:100%;text-align:center;margin-bottom:4px;display:flex;align-items:center;justify-content:center;gap:12px;">
+        <div id="backupStatus" style="font-size:10px;color:var(--muted);letter-spacing:1px;"></div>
+        <div id="syncStatus" style="font-size:10px;color:var(--muted);letter-spacing:1px;">☁ 連線中…</div>
+      </div>
+      <button onclick="exportBackup()" style="background:none;border:1px solid var(--border);color:var(--gold);font-family:'Noto Serif TC',serif;font-size:10px;letter-spacing:2px;padding:5px 14px;cursor:pointer;border-radius:1px;transition:all 0.3s;">匯出備份</button>
+      <label style="background:none;border:1px solid var(--border);color:var(--muted);font-family:'Noto Serif TC',serif;font-size:10px;letter-spacing:2px;padding:5px 14px;cursor:pointer;border-radius:1px;">匯入備份<input type="file" accept=".json" onchange="importBackup(event)" style="display:none;"></label>
+    </div>
+
   </div>
 </div>
 
@@ -1172,7 +1248,10 @@ function renderDayDetail(dateKey, y, m, d){
 
 // ── REFLECT ──
 let reflectEntries = JSON.parse(localStorage.getItem('reflect_entries') || '[]');
-function saveReflectEntries(){ localStorage.setItem('reflect_entries', JSON.stringify(reflectEntries)); }
+function saveReflectEntries(){
+  localStorage.setItem('reflect_entries', JSON.stringify(reflectEntries));
+  if(window.fbSave) fbSave('reflectEntries', reflectEntries);
+}
 
 function setRCat(cat, el){
   currentRCat = cat;
@@ -1201,7 +1280,24 @@ function setRCat(cat, el){
   }
 }
 
-// ── 牌卡庫 ──
+// ── 今日牌卡（首頁顯示） ──
+function renderTodayCards(){
+  const el = document.getElementById('todayCardArea');
+  if(!el) return;
+  const cards = JSON.parse(localStorage.getItem('myspace_cardlib')||'[]');
+  const todayCards = cards.filter(c=>c.dateKey===todayKey());
+  if(todayCards.length===0){
+    el.innerHTML=`<div onclick="showScreen('reflect')" style="cursor:pointer;text-align:center;padding:10px 0;font-size:12px;color:var(--muted);letter-spacing:1px;">🃏 今天還沒有牌卡 · 點此去抽一張</div>`;
+    return;
+  }
+  el.innerHTML = todayCards.map(c=>`
+    <div style="display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:14px;flex-shrink:0;margin-top:2px;">🃏</span>
+      <div style="font-size:14px;color:var(--text);line-height:1.8;letter-spacing:0.5px;flex:1;">${c.text}</div>
+      <span style="font-size:10px;color:var(--muted);flex-shrink:0;margin-top:4px;">${c.time}</span>
+    </div>
+  `).join('');
+}
 function saveCardEntry(){
   const text = document.getElementById('cardlibInput').value.trim();
   if(!text){ showToast('請先輸入牌卡句子'); return; }
@@ -1215,6 +1311,7 @@ function saveCardEntry(){
     time: now.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'})
   });
   localStorage.setItem('myspace_cardlib', JSON.stringify(cards));
+  if(window.fbSave) fbSave('cardlib', cards);
   // 也存進 reflectEntries 讓日曆和首頁看得到
   reflectEntries.unshift({
     id: Date.now()+1,
@@ -1229,6 +1326,7 @@ function saveCardEntry(){
   saveReflectEntries();
   document.getElementById('cardlibInput').value = '';
   renderCardlibList();
+  renderTodayCards();
   renderHomeReflect();
   renderCalendar();
   showToast('✦ 已存入牌卡庫');
@@ -1260,6 +1358,7 @@ function deleteCard(id, btn){
     let cards = JSON.parse(localStorage.getItem('myspace_cardlib')||'[]');
     cards = cards.filter(c=>c.id!==id);
     localStorage.setItem('myspace_cardlib', JSON.stringify(cards));
+    if(window.fbSave) fbSave('cardlib', cards);
     // 同步移除 reflectEntries 裡的對應項
     reflectEntries = reflectEntries.filter(e=>!(e.cat==='cardlib' && e.id===id+1));
     saveReflectEntries();
@@ -1369,7 +1468,10 @@ function deleteBook(id, btn){
 }
 
 // ── COURSES ──
-function saveCourses(){ localStorage.setItem('myspace_courses', JSON.stringify(courses)); }
+function saveCourses(){
+  localStorage.setItem('myspace_courses', JSON.stringify(courses));
+  if(window.fbSave) fbSave('courses', courses);
+}
 
 function toggleOtherNote(val){
   document.getElementById('inputOtherNote').style.display = val==='其他'?'block':'none';
@@ -1823,7 +1925,10 @@ let books = JSON.parse(localStorage.getItem('myspace_books') || '[]');
 let editingBookId = null;
 let currentRating = 0;
 
-function saveBooks(){ localStorage.setItem('myspace_books', JSON.stringify(books)); }
+function saveBooks(){
+  localStorage.setItem('myspace_books', JSON.stringify(books));
+  if(window.fbSave) fbSave('books', books);
+}
 
 const bookTypeColors = {
   '小說／文學':'rgba(180,100,60,0.12)','靈性／身心靈':'rgba(120,70,160,0.12)',
@@ -2154,6 +2259,7 @@ function importBackup(event){
 
 // ── INIT ──
 setGreeting();
+renderTodayCards();
 renderCalendar();
 renderHomeCourses();
 renderFullCourses();
@@ -2171,6 +2277,7 @@ setInterval(()=>{
   if(now !== _lastDateKey){
     _lastDateKey = now;
     setGreeting();
+    renderTodayCards();
     renderCalendar();
     renderHomeReflect();
     autoBackup();
