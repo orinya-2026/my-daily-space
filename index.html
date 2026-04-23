@@ -5,52 +5,51 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Orinya 的空間</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600&family=Cinzel:wght@400;600&family=Cormorant+Garamond:ital,wght@0,300;1,300&display=swap" rel="stylesheet">
-<!-- Firebase SDK -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+<!-- Firebase SDK (compat version) -->
+<script src="https://cdn.jsdelivr.net/npm/firebase@9.23.0/firebase-app-compat.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@9.23.0/firebase-firestore-compat.min.js"></script>
+<script>
+// Firebase 初始化 — 放在最前面確保 SDK 已載入
+window.fbSave = null;
+window.fbReady = false;
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCPG-mE6nheRHryaXrRXTiGuia-uxBqVmc",
-  authDomain: "my-daily-space.firebaseapp.com",
-  projectId: "my-daily-space",
-  storageBucket: "my-daily-space.firebasestorage.app",
-  messagingSenderId: "576582697654",
-  appId: "1:576582697654:web:5b93c4f8adbcaffd3f9c17"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const USER_ID = 'orinya'; // 固定用戶ID
-
-// ── Firebase 寫入 ──
-async function fbSave(key, data){
+function initFirebase(){
   try {
-    await setDoc(doc(db, 'userdata', USER_ID, 'collections', key), { data: JSON.stringify(data) });
-  } catch(e){ console.warn('Firebase save failed:', e); }
-}
+    const firebaseConfig = {
+      apiKey: "AIzaSyCPG-mE6nheRHryaXrRXTiGuia-uxBqVmc",
+      authDomain: "my-daily-space.firebaseapp.com",
+      projectId: "my-daily-space",
+      storageBucket: "my-daily-space.firebasestorage.app",
+      messagingSenderId: "576582697654",
+      appId: "1:576582697654:web:5b93c4f8adbcaffd3f9c17"
+    };
+    if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const USER_ID = 'orinya';
 
-// ── Firebase 即時監聽，有更新自動同步到 localStorage 並刷新畫面 ──
-function fbListen(key, localKey, renderFn){
-  onSnapshot(doc(db, 'userdata', USER_ID, 'collections', key), (snap)=>{
-    if(snap.exists()){
-      const raw = snap.data().data;
-      const current = localStorage.getItem(localKey);
-      if(raw !== current){
-        localStorage.setItem(localKey, raw);
-        renderFn();
-      }
+    window.fbSave = async function(key, data){
+      try {
+        await db.collection('userdata').doc(USER_ID)
+          .collection('collections').doc(key)
+          .set({ data: JSON.stringify(data) });
+      } catch(e){ console.warn('Firebase save failed:', e); }
+    };
+
+    function fbListen(key, localKey, renderFn){
+      db.collection('userdata').doc(USER_ID)
+        .collection('collections').doc(key)
+        .onSnapshot((snap)=>{
+          if(snap.exists){
+            const raw = snap.data().data;
+            const current = localStorage.getItem(localKey);
+            if(raw !== current){
+              localStorage.setItem(localKey, raw);
+              try{ renderFn(); }catch(e){}
+            }
+          }
+        }, err=>console.warn('Firebase listen error:', err));
     }
-  });
-}
 
-// 掛載到 window 讓主 script 使用
-window.fbSave = fbSave;
-window.fbReady = true;
-
-// 等主 script 載入完再開始監聽
-window.addEventListener('load', ()=>{
-  setTimeout(()=>{
     fbListen('courses', 'myspace_courses', ()=>{
       courses = JSON.parse(localStorage.getItem('myspace_courses')||'[]');
       renderHomeCourses(); renderFullCourses();
@@ -66,11 +65,16 @@ window.addEventListener('load', ()=>{
     fbListen('cardlib', 'myspace_cardlib', ()=>{
       renderTodayCards(); renderCalendar();
     });
-    // 顯示同步狀態
-    document.getElementById('syncStatus').textContent = '☁ 已連線';
-    document.getElementById('syncStatus').style.color = '#7a9a6a';
-  }, 1000);
-});
+
+    const el = document.getElementById('syncStatus');
+    if(el){ el.textContent = '☁ 已連線'; el.style.color = '#7a9a6a'; }
+    window.fbReady = true;
+  } catch(e){
+    console.warn('Firebase init failed:', e);
+    const el = document.getElementById('syncStatus');
+    if(el){ el.textContent = '☁ 離線模式'; el.style.color = 'var(--muted)'; }
+  }
+}
 </script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -2247,8 +2251,15 @@ function importBackup(event){
       courses = JSON.parse(localStorage.getItem('myspace_courses')||'[]');
       reflectEntries = JSON.parse(localStorage.getItem('reflect_entries')||'[]');
       books = JSON.parse(localStorage.getItem('myspace_books')||'[]');
-      renderHomeCourses(); renderFullCourses(); renderBookList(); renderHomeBooks(); renderHomeReflect();
-      showToast('✦ 備份已還原！');
+      // 同步推送到 Firebase
+      if(window.fbSave){
+        if(data.courses) fbSave('courses', data.courses);
+        if(data.reflectEntries) fbSave('reflectEntries', data.reflectEntries);
+        if(data.books) fbSave('books', data.books);
+        if(data.cardlib) fbSave('cardlib', data.cardlib);
+      }
+      renderHomeCourses(); renderFullCourses(); renderBookList(); renderHomeBooks(); renderHomeReflect(); renderTodayCards(); renderCalendar();
+      showToast('✦ 備份已還原並同步！');
     } catch(err) {
       showToast('檔案格式錯誤');
     }
@@ -2283,6 +2294,20 @@ setInterval(()=>{
     autoBackup();
   }
 }, 60000);
+
+// Firebase 初始化（在所有 render 函數定義完之後才呼叫）
+// 等 Firebase SDK 完全載入才執行
+function waitForFirebase(tries){
+  if(typeof firebase !== 'undefined' && firebase.app){
+    initFirebase();
+  } else if(tries > 0){
+    setTimeout(()=>waitForFirebase(tries-1), 300);
+  } else {
+    const el = document.getElementById('syncStatus');
+    if(el){ el.textContent = '☁ 離線模式'; }
+  }
+}
+waitForFirebase(20);
 
 // init done
 </script>
