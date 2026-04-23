@@ -2164,6 +2164,19 @@ newReflect();
 autoBackup();
 updateBackupStatus();
 
+// 自動換天：每分鐘檢查日期是否改變
+let _lastDateKey = todayKey();
+setInterval(()=>{
+  const now = todayKey();
+  if(now !== _lastDateKey){
+    _lastDateKey = now;
+    setGreeting();
+    renderCalendar();
+    renderHomeReflect();
+    autoBackup();
+  }
+}, 60000);
+
 // init done
 </script>
 </body>
