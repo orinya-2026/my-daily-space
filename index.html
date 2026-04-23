@@ -2251,13 +2251,16 @@ function importBackup(event){
       courses = JSON.parse(localStorage.getItem('myspace_courses')||'[]');
       reflectEntries = JSON.parse(localStorage.getItem('reflect_entries')||'[]');
       books = JSON.parse(localStorage.getItem('myspace_books')||'[]');
-      // 同步推送到 Firebase
-      if(window.fbSave){
-        if(data.courses) fbSave('courses', data.courses);
-        if(data.reflectEntries) fbSave('reflectEntries', data.reflectEntries);
-        if(data.books) fbSave('books', data.books);
-        if(data.cardlib) fbSave('cardlib', data.cardlib);
-      }
+      // 同步推送到 Firebase（稍等確保連線穩定）
+      setTimeout(()=>{
+        if(window.fbSave){
+          if(data.courses) fbSave('courses', data.courses);
+          if(data.reflectEntries) fbSave('reflectEntries', data.reflectEntries);
+          if(data.books) fbSave('books', data.books);
+          if(data.cardlib) fbSave('cardlib', data.cardlib);
+          showToast('☁ 資料已同步至雲端');
+        }
+      }, 2000);
       renderHomeCourses(); renderFullCourses(); renderBookList(); renderHomeBooks(); renderHomeReflect(); renderTodayCards(); renderCalendar();
       showToast('✦ 備份已還原並同步！');
     } catch(err) {
