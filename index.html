@@ -40,7 +40,6 @@ function initFirebase(){
       db.collection('userdata').doc(USER_ID)
         .collection('collections').doc(key)
         .onSnapshot((snap)=>{
-          // 第一次收到回應就顯示已連線
           if(!connectedOnce){
             connectedOnce = true;
             const el = document.getElementById('syncStatus');
@@ -48,10 +47,28 @@ function initFirebase(){
           }
           if(snap.exists){
             const raw = snap.data().data;
-            const current = localStorage.getItem(localKey);
-            if(raw !== current){
-              localStorage.setItem(localKey, raw);
-              try{ renderFn(); }catch(e){}
+            // 只有 Firebase 有實際資料才覆蓋本地
+            try {
+              const parsed = JSON.parse(raw);
+              if(Array.isArray(parsed) && parsed.length === 0) return; // Firebase 是空的，保留本地
+              if(raw === null || raw === undefined) return;
+              const current = localStorage.getItem(localKey);
+              if(raw !== current){
+                localStorage.setItem(localKey, raw);
+                try{ renderFn(); }catch(e){}
+              }
+            } catch(e){ return; }
+          }
+          // Firebase 沒有這筆資料，把本地資料推上去
+          else {
+            const local = localStorage.getItem(localKey);
+            if(local && window.fbSave){
+              try {
+                const parsed = JSON.parse(local);
+                if(Array.isArray(parsed) && parsed.length > 0){
+                  fbSave(key, parsed);
+                }
+              } catch(e){}
             }
           }
         }, err=>{
