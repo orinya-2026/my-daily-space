@@ -653,6 +653,27 @@ input[type=range]::-webkit-slider-thumb{
   padding:8px 0 4px;letter-spacing:1px;
 }
 
+/* 英文頁標籤 */
+.eng-tab{
+  flex:1;padding:12px 8px;
+  background:transparent;border:none;
+  font-family:'Noto Serif TC',serif;
+  font-size:13px;letter-spacing:1px;
+  color:var(--muted);cursor:pointer;
+  border-bottom:2px solid transparent;
+  transition:all 0.3s;
+}
+.eng-tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+.sort-btn{
+  flex:1;padding:8px;
+  background:transparent;border:none;
+  font-family:'Noto Serif TC',serif;
+  font-size:12px;letter-spacing:1px;
+  color:var(--muted);cursor:pointer;
+  transition:all 0.3s;
+}
+.sort-btn.active{background:var(--gold);color:#fff;}
+
 /* TOAST */
 .toast{
   position:fixed;bottom:84px;left:50%;
@@ -943,21 +964,39 @@ input[type=range]::-webkit-slider-thumb{
     <button class="back-btn" onclick="goHome()">←</button>
     <div class="screen-title">每日單字</div>
   </div>
+
+  <!-- 三個標籤 -->
+  <div style="display:flex;border-bottom:1px solid var(--border);flex-shrink:0;">
+    <button class="eng-tab active" id="engTab-today" onclick="setEngTab('today')">今日單字</button>
+    <button class="eng-tab" id="engTab-list" onclick="setEngTab('list')">單字本</button>
+    <button class="eng-tab" id="engTab-practice" onclick="setEngTab('practice')">練習</button>
+  </div>
+
   <div class="screen-scroll">
 
-    <!-- AI 生成今日單字 -->
-    <div class="add-form" style="margin-bottom:14px;">
+    <!-- 今日單字 -->
+    <div id="engArea-today">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
         <div class="form-label" style="margin:0;">TODAY'S WORDS · 今日單字</div>
-        <button onclick="generateWeeklyWords()" style="background:var(--gold);color:#fff;border:none;padding:6px 14px;font-family:'Noto Serif TC',serif;font-size:11px;letter-spacing:1px;cursor:pointer;border-radius:1px;">AI 生成</button>
+        <button onclick="generateWeeklyWords()" style="background:var(--gold);color:#fff;border:none;padding:6px 14px;font-family:'Noto Serif TC',serif;font-size:11px;letter-spacing:1px;cursor:pointer;border-radius:1px;">✦ 生成</button>
       </div>
-      <div id="weeklyWordsList"><div style="text-align:center;padding:16px 0;color:var(--muted);font-size:13px;letter-spacing:1px;">點「AI 生成」取得今日5個單字 🌿</div></div>
+      <div id="weeklyWordsList"><div style="text-align:center;padding:20px 0;color:var(--muted);font-size:13px;letter-spacing:1px;">點「生成」取得今日5個單字 🌿</div></div>
     </div>
 
-    <!-- 我的單字本 -->
-    <div style="background:var(--panel);border-radius:2px;padding:16px;margin-left:-20px;margin-right:-20px;padding-left:20px;padding-right:20px;border-top:1px solid var(--border);">
-      <div style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:4px;color:var(--muted);margin-bottom:12px;">MY WORDS · 單字本</div>
+    <!-- 單字本 -->
+    <div id="engArea-list" style="display:none;">
+      <!-- 排序 -->
+      <div style="display:flex;gap:0;border:1px solid var(--border);border-radius:1px;overflow:hidden;margin-bottom:14px;">
+        <button class="sort-btn active" id="sort-newest" onclick="setWordSort('newest')">最新</button>
+        <button class="sort-btn" id="sort-az" onclick="setWordSort('az')">A → Z</button>
+        <button class="sort-btn" id="sort-unknown" onclick="setWordSort('unknown')">未記住</button>
+      </div>
       <div id="wordList"></div>
+    </div>
+
+    <!-- 練習 -->
+    <div id="engArea-practice" style="display:none;">
+      <div id="practiceArea"></div>
     </div>
 
   </div>
@@ -1974,7 +2013,8 @@ function showScreen(name){
   } else if(name==='english'){
     document.getElementById('englishScreen').classList.add('active');
     document.getElementById('nav-english').classList.add('active');
-    renderWordList(); renderSentenceList(); renderGrammarList(); renderWeeklyWords();
+    setEngTab('today');
+    renderWeeklyWords();
   }
 }
 function goHome(){showScreen('home');}
@@ -2297,7 +2337,137 @@ function saveTodoEdit(id){
   renderHomeTodos();
 }
 
-// ── 英文頁 ──
+// ── 英文頁標籤 ──
+let currentEngTab = 'today';
+let currentWordSort = 'newest';
+let practiceQueue = [];
+let currentPracticeWord = null;
+let practiceAnswered = false;
+
+function setEngTab(tab){
+  currentEngTab = tab;
+  ['today','list','practice'].forEach(t=>{
+    document.getElementById(`engTab-${t}`).classList.toggle('active', t===tab);
+    document.getElementById(`engArea-${t}`).style.display = t===tab?'block':'none';
+  });
+  if(tab==='list') renderWordList();
+  if(tab==='practice') startPractice();
+}
+
+function setWordSort(sort){
+  currentWordSort = sort;
+  ['newest','az','unknown'].forEach(s=>{
+    document.getElementById(`sort-${s}`).classList.toggle('active', s===sort);
+  });
+  renderWordList();
+}
+
+function getSortedWords(){
+  let words = [...engWords];
+  if(currentWordSort==='az') words.sort((a,b)=>a.word.localeCompare(b.word));
+  else if(currentWordSort==='unknown') words.sort((a,b)=> (a.known===b.known)?0:(a.known?1:-1));
+  // newest = 預設順序（最新在前）
+  return words;
+}
+
+// ── 練習模式 ──
+function startPractice(){
+  practiceQueue = engWords.filter(w=>!w.known);
+  if(practiceQueue.length===0){
+    document.getElementById('practiceArea').innerHTML=`
+      <div style="text-align:center;padding:40px 20px;">
+        <div style="font-size:40px;margin-bottom:16px;">🎉</div>
+        <div style="font-size:16px;color:var(--text);margin-bottom:8px;">所有單字都記住了！</div>
+        <div style="font-size:13px;color:var(--muted);letter-spacing:1px;">去生成新的單字繼續學習吧 🌿</div>
+        <button onclick="setEngTab('today')" style="margin-top:20px;background:var(--gold);color:#fff;border:none;padding:10px 24px;font-family:'Noto Serif TC',serif;font-size:13px;letter-spacing:2px;cursor:pointer;border-radius:1px;">去生成單字</button>
+      </div>`;
+    return;
+  }
+  // 隨機排列
+  practiceQueue.sort(()=>Math.random()-0.5);
+  nextPracticeWord();
+}
+
+function nextPracticeWord(){
+  if(practiceQueue.length===0){
+    document.getElementById('practiceArea').innerHTML=`
+      <div style="text-align:center;padding:40px 20px;">
+        <div style="font-size:40px;margin-bottom:16px;">✦</div>
+        <div style="font-size:16px;color:var(--text);margin-bottom:8px;">這輪練習完成！</div>
+        <div style="font-size:13px;color:var(--muted);letter-spacing:1px;margin-bottom:20px;">繼續練習或回單字本看進度</div>
+        <div style="display:flex;gap:10px;justify-content:center;">
+          <button onclick="startPractice()" style="background:var(--gold);color:#fff;border:none;padding:10px 20px;font-family:'Noto Serif TC',serif;font-size:13px;letter-spacing:2px;cursor:pointer;border-radius:1px;">再練一輪</button>
+          <button onclick="setEngTab('list')" style="background:transparent;color:var(--muted);border:1px solid var(--border);padding:10px 20px;font-family:'Noto Serif TC',serif;font-size:13px;letter-spacing:2px;cursor:pointer;border-radius:1px;">看單字本</button>
+        </div>
+      </div>`;
+    return;
+  }
+  currentPracticeWord = practiceQueue.shift();
+  practiceAnswered = false;
+  renderPracticeCard();
+}
+
+function renderPracticeCard(){
+  const w = currentPracticeWord;
+  const remaining = practiceQueue.length;
+  document.getElementById('practiceArea').innerHTML=`
+    <div style="text-align:center;margin-bottom:8px;">
+      <div style="font-size:11px;color:var(--muted);letter-spacing:2px;">還剩 ${remaining} 個未練習</div>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:2px;padding:24px 20px;margin-bottom:16px;text-align:center;">
+      <div style="font-size:12px;color:var(--gold);letter-spacing:3px;margin-bottom:16px;font-family:'Cinzel',serif;">看中文，輸入英文單字</div>
+      <div style="font-size:22px;color:var(--text);margin-bottom:8px;font-weight:400;">${w.meaning}</div>
+      ${w.example?`<div style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:16px;">${w.example.split('　')[1]||''}</div>`:'<div style="margin-bottom:16px;"></div>'}
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:14px;">
+      <input type="text" id="practiceInput" placeholder="輸入英文單字⋯⋯"
+        style="flex:1;font-size:16px;padding:12px 14px;letter-spacing:0.5px;"
+        onkeydown="if(event.key==='Enter') checkAnswer()">
+      <button onclick="checkAnswer()" style="background:var(--gold);color:#fff;border:none;padding:12px 20px;font-family:'Noto Serif TC',serif;font-size:13px;letter-spacing:1px;cursor:pointer;border-radius:1px;flex-shrink:0;">確認</button>
+    </div>
+    <div id="practiceResult" style="display:none;"></div>
+    <button onclick="setEngTab('list')" style="width:100%;background:transparent;border:1px solid var(--border);color:var(--muted);padding:10px;font-family:'Noto Serif TC',serif;font-size:12px;letter-spacing:2px;cursor:pointer;border-radius:1px;margin-top:8px;">✕ 結束練習</button>
+  `;
+  setTimeout(()=>{ const el=document.getElementById('practiceInput'); if(el) el.focus(); },100);
+}
+
+function checkAnswer(){
+  if(practiceAnswered) return;
+  const w = currentPracticeWord;
+  const input = document.getElementById('practiceInput');
+  if(!input) return;
+  const answer = input.value.trim().toLowerCase();
+  const correct = w.word.toLowerCase();
+  practiceAnswered = true;
+  input.disabled = true;
+
+  const isCorrect = answer === correct;
+  if(isCorrect){
+    // 答對 → 標記已記住
+    const found = engWords.find(x=>x.id===w.id);
+    if(found){ found.known=true; saveEngWords(); }
+  }
+
+  const resultEl = document.getElementById('practiceResult');
+  resultEl.style.display = 'block';
+  resultEl.innerHTML = isCorrect
+    ? `<div style="background:rgba(122,154,106,0.12);border:1px solid #7a9a6a;border-radius:2px;padding:14px 16px;margin-bottom:12px;text-align:center;">
+        <div style="font-size:22px;margin-bottom:6px;">✓</div>
+        <div style="font-size:16px;color:#4a7a4a;font-weight:400;">${w.word}</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:4px;">已標記為「已記住」🌿</div>
+      </div>
+      <button onclick="nextPracticeWord()" style="width:100%;background:var(--gold);color:#fff;border:none;padding:12px;font-family:'Noto Serif TC',serif;font-size:13px;letter-spacing:2px;cursor:pointer;border-radius:1px;">繼續下一個 →</button>`
+    : `<div style="background:rgba(192,57,43,0.08);border:1px solid rgba(192,57,43,0.3);border-radius:2px;padding:14px 16px;margin-bottom:12px;text-align:center;">
+        <div style="font-size:22px;margin-bottom:6px;">✕</div>
+        <div style="font-size:14px;color:var(--muted);margin-bottom:6px;">正確答案是</div>
+        <div style="font-size:20px;color:var(--text);font-weight:400;">${w.word}</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:4px;">${w.phonetic||''} ${w.pos||''}</div>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="nextPracticeWord()" style="flex:1;background:var(--gold);color:#fff;border:none;padding:12px;font-family:'Noto Serif TC',serif;font-size:13px;letter-spacing:2px;cursor:pointer;border-radius:1px;">繼續下一個 →</button>
+        <button onclick="setEngTab('list')" style="flex:1;background:transparent;border:1px solid var(--border);color:var(--muted);padding:12px;font-family:'Noto Serif TC',serif;font-size:12px;letter-spacing:1px;cursor:pointer;border-radius:1px;">結束練習</button>
+      </div>`;
+}
 let engWords = JSON.parse(localStorage.getItem('eng_words')||'[]');
 let engSentences = JSON.parse(localStorage.getItem('eng_sentences')||'[]');
 let engGrammar = JSON.parse(localStorage.getItem('eng_grammar')||'[]');
@@ -2511,8 +2681,9 @@ function addWord(){
 function renderWordList(){
   const el = document.getElementById('wordList');
   if(!el) return;
-  if(engWords.length===0){ el.innerHTML='<div style="text-align:center;padding:20px 0;color:var(--muted);font-size:13px;letter-spacing:1px;">單字本還是空的，點上方生成今日單字 🌿</div>'; return; }
-  el.innerHTML = engWords.map(w=>`
+  const words = getSortedWords();
+  if(words.length===0){ el.innerHTML='<div style="text-align:center;padding:20px 0;color:var(--muted);font-size:13px;letter-spacing:1px;">單字本還是空的，去今日單字生成吧 🌿</div>'; return; }
+  el.innerHTML = words.map(w=>`
     <div style="background:${w.known?'rgba(122,154,106,0.08)':'var(--card)'};border:1px solid var(--border);border-radius:2px;padding:12px 14px;margin-bottom:8px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;">
         <div style="flex:1;">
