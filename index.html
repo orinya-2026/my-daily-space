@@ -2464,9 +2464,15 @@ function renderPracticeCard(){
       <button onclick="checkAnswer()" style="background:var(--gold);color:#fff;border:none;padding:12px 20px;font-family:'Noto Serif TC',serif;font-size:13px;letter-spacing:1px;cursor:pointer;border-radius:1px;flex-shrink:0;">確認</button>
     </div>
     <div id="practiceResult" style="display:none;"></div>
-    <button onclick="setEngTab('list')" style="width:100%;background:transparent;border:1px solid var(--border);color:var(--muted);padding:10px;font-family:'Noto Serif TC',serif;font-size:12px;letter-spacing:2px;cursor:pointer;border-radius:1px;margin-top:8px;">✕ 結束練習</button>
   `;
   setTimeout(()=>{ const el=document.getElementById('practiceInput'); if(el) el.focus(); },100);
+}
+
+function retryPractice(){
+  practiceAnswered = false;
+  const input = document.getElementById('practiceInput');
+  if(input){ input.disabled = false; input.value = ''; input.focus(); }
+  document.getElementById('practiceResult').style.display = 'none';
 }
 
 function checkAnswer(){
@@ -2481,7 +2487,6 @@ function checkAnswer(){
 
   const isCorrect = answer === correct;
   if(isCorrect){
-    // 答對 → 標記已記住
     const found = engWords.find(x=>x.id===w.id);
     if(found){ found.known=true; saveEngWords(); }
   }
@@ -2501,9 +2506,10 @@ function checkAnswer(){
         <div style="font-size:20px;color:var(--text);font-weight:400;">${w.word}</div>
         <div style="font-size:13px;color:var(--muted);margin-top:4px;">${w.phonetic||''} ${w.pos||''}</div>
       </div>
-      <div style="display:flex;gap:10px;">
-        <button onclick="nextPracticeWord()" style="flex:1;background:var(--gold);color:#fff;border:none;padding:12px;font-family:'Noto Serif TC',serif;font-size:13px;letter-spacing:2px;cursor:pointer;border-radius:1px;">繼續下一個 →</button>
-        <button onclick="setEngTab('list')" style="flex:1;background:transparent;border:1px solid var(--border);color:var(--muted);padding:12px;font-family:'Noto Serif TC',serif;font-size:12px;letter-spacing:1px;cursor:pointer;border-radius:1px;">結束練習</button>
+      <div style="display:flex;gap:8px;">
+        <button onclick="retryPractice()" style="flex:1;background:transparent;border:1px solid var(--gold);color:var(--gold);padding:11px;font-family:'Noto Serif TC',serif;font-size:12px;letter-spacing:1px;cursor:pointer;border-radius:1px;">再來一次</button>
+        <button onclick="nextPracticeWord()" style="flex:1;background:var(--gold);color:#fff;border:none;padding:11px;font-family:'Noto Serif TC',serif;font-size:12px;letter-spacing:1px;cursor:pointer;border-radius:1px;">下一個 →</button>
+        <button onclick="setEngTab('list')" style="flex:1;background:transparent;border:1px solid var(--border);color:var(--muted);padding:11px;font-family:'Noto Serif TC',serif;font-size:12px;letter-spacing:1px;cursor:pointer;border-radius:1px;">結束</button>
       </div>`;
 }
 let engWords = JSON.parse(localStorage.getItem('eng_words')||'[]');
