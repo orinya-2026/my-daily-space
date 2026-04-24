@@ -35,10 +35,17 @@ function initFirebase(){
       } catch(e){ console.warn('Firebase save failed:', e); }
     };
 
+    let connectedOnce = false;
     function fbListen(key, localKey, renderFn){
       db.collection('userdata').doc(USER_ID)
         .collection('collections').doc(key)
         .onSnapshot((snap)=>{
+          // 第一次收到回應就顯示已連線
+          if(!connectedOnce){
+            connectedOnce = true;
+            const el = document.getElementById('syncStatus');
+            if(el){ el.textContent = '☁ 已連線'; el.style.color = '#7a9a6a'; }
+          }
           if(snap.exists){
             const raw = snap.data().data;
             const current = localStorage.getItem(localKey);
@@ -47,7 +54,11 @@ function initFirebase(){
               try{ renderFn(); }catch(e){}
             }
           }
-        }, err=>console.warn('Firebase listen error:', err));
+        }, err=>{
+          console.warn('Firebase listen error:', err);
+          const el = document.getElementById('syncStatus');
+          if(el){ el.textContent = '☁ 離線模式'; el.style.color = 'var(--muted)'; }
+        });
     }
 
     fbListen('courses', 'myspace_courses', ()=>{
@@ -86,8 +97,6 @@ function initFirebase(){
       renderWeeklyWords(); renderHomeTodayWords();
     });
 
-    const el = document.getElementById('syncStatus');
-    if(el){ el.textContent = '☁ 已連線'; el.style.color = '#7a9a6a'; }
     window.fbReady = true;
   } catch(e){
     console.warn('Firebase init failed:', e);
