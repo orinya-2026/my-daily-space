@@ -119,9 +119,9 @@ input, textarea, select {
   --border:rgba(160,120,40,0.18);
   --gold:#a07828;
   --gold2:#c9a84c;
-  --text:#2a2018;
-  --muted:#8a7a60;
-  --deep:#1a1008;
+  --text:#1a1008;
+  --muted:#5a4a35;
+  --deep:#0d0804;
 }
 html,body{height:100%;overflow:hidden;}
 body{
@@ -133,6 +133,7 @@ body{
   max-width:480px;
   margin:0 auto;
   position:relative;
+  font-size:16px;
 }
 body::before{
   content:'';
@@ -176,13 +177,13 @@ body::before{
   margin-bottom:6px;
 }
 .home-title{
-  font-size:26px;
+  font-size:28px;
   font-weight:300;
   letter-spacing:6px;
   margin-bottom:4px;
 }
 .home-date{
-  font-size:12px;
+  font-size:14px;
   letter-spacing:2px;
   color:var(--muted);
   margin-top:8px;
@@ -227,7 +228,7 @@ body::before{
   margin-bottom:12px;
 }
 .today-prompt{
-  font-size:17px;
+  font-size:18px;
   line-height:1.95;
   font-weight:400;
   letter-spacing:0.5px;
@@ -293,7 +294,7 @@ body::before{
 /* course quick view */
 .section-title{
   font-family:'Cinzel',serif;
-  font-size:11px;
+  font-size:12px;
   letter-spacing:4px;
   color:var(--muted);
   margin-bottom:10px;
@@ -327,8 +328,8 @@ body::before{
   font-size:9px;color:var(--gold);font-family:'Cinzel',serif;
 }
 .mini-info{flex:1;min-width:0;}
-.mini-name{font-size:15px;font-weight:400;letter-spacing:0.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.mini-meta{font-size:12px;color:var(--muted);margin-top:3px;letter-spacing:1px;}
+.mini-name{font-size:16px;font-weight:400;letter-spacing:0.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mini-meta{font-size:13px;color:var(--muted);margin-top:3px;letter-spacing:1px;}
 .mini-tag{
   font-size:10px;letter-spacing:1px;
   padding:2px 7px;border-radius:8px;flex-shrink:0;
@@ -383,7 +384,7 @@ body::before{
 }
 .course-card:hover{border-color:var(--gold2);}
 .cc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
-.cc-name{font-size:16px;font-weight:400;letter-spacing:0.5px;flex:1;line-height:1.5;}
+.cc-name{font-size:17px;font-weight:400;letter-spacing:0.5px;flex:1;line-height:1.5;}
 .cc-tag{font-size:10px;letter-spacing:1px;padding:2px 7px;border-radius:8px;margin-left:8px;flex-shrink:0;}
 .pb-wrap{margin-bottom:10px;}
 .pb-meta{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:4px;letter-spacing:1px;}
@@ -491,7 +492,7 @@ select option{background:var(--card);color:var(--text);}
   border-radius:2px;pointer-events:none;
 }
 .reflect-tag{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:13px;letter-spacing:3px;color:var(--gold);margin-bottom:14px;}
-.reflect-text{font-size:18px;line-height:1.95;font-weight:400;letter-spacing:0.5px;transition:opacity 0.4s;}
+.reflect-text{font-size:19px;line-height:1.95;font-weight:400;letter-spacing:0.5px;transition:opacity 0.4s;}
 .reflect-text.fade{opacity:0;}
 .reflect-sym{text-align:right;font-size:22px;margin-top:14px;opacity:0.5;}
 .reflect-actions{display:flex;gap:10px;margin-bottom:16px;}
@@ -2466,12 +2467,12 @@ function renderWeeklyWords(){
   el.innerHTML = engWeeklyWords.map(w=>`
     <div style="background:var(--card);border:1px solid var(--border);border-radius:2px;padding:12px 14px;margin-bottom:10px;">
       <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:4px;">
-        <span style="font-size:17px;font-weight:400;color:var(--text);">${w.word}</span>
+        <a href="https://dictionary.cambridge.org/dictionary/english/${encodeURIComponent(w.word)}" target="_blank" style="font-size:18px;font-weight:400;color:var(--gold);text-decoration:none;border-bottom:1px solid var(--gold);">${w.word}</a>
         <span style="font-size:12px;color:var(--muted);">${w.phonetic||''}</span>
-        <span style="font-size:11px;color:var(--gold);">${w.pos||''}</span>
+        <span style="font-size:11px;color:var(--gold);opacity:0.7;">${w.pos||''}</span>
       </div>
-      <div style="font-size:13px;color:var(--text);margin-bottom:6px;">${w.meaning}</div>
-      <div style="font-size:12px;color:var(--muted);font-style:italic;line-height:1.7;">${w.en}<br>${w.zh}</div>
+      <div style="font-size:14px;color:var(--text);margin-bottom:6px;">${w.meaning}</div>
+      <div style="font-size:13px;color:var(--muted);font-style:italic;line-height:1.7;">${w.en}<br>${w.zh}</div>
     </div>
   `).join('');
 }
@@ -2510,18 +2511,22 @@ function addWord(){
 function renderWordList(){
   const el = document.getElementById('wordList');
   if(!el) return;
-  if(engWords.length===0){ el.innerHTML=''; return; }
+  if(engWords.length===0){ el.innerHTML='<div style="text-align:center;padding:20px 0;color:var(--muted);font-size:13px;letter-spacing:1px;">單字本還是空的，點上方生成今日單字 🌿</div>'; return; }
   el.innerHTML = engWords.map(w=>`
-    <div style="background:${w.known?'rgba(122,154,106,0.08)':'var(--panel)'};border:1px solid var(--border);border-radius:2px;padding:12px 14px;margin-bottom:8px;">
+    <div style="background:${w.known?'rgba(122,154,106,0.08)':'var(--card)'};border:1px solid var(--border);border-radius:2px;padding:12px 14px;margin-bottom:8px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;">
         <div style="flex:1;">
-          <span style="font-size:16px;color:var(--text);${w.known?'text-decoration:line-through;color:var(--muted);':''}">${w.word}</span>
-          <span style="font-size:13px;color:var(--muted);margin-left:8px;">${w.meaning}</span>
-          ${w.example?`<div style="font-size:12px;color:var(--muted);font-style:italic;margin-top:4px;">${w.example}</div>`:''}
+          <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:4px;">
+            <a href="https://dictionary.cambridge.org/dictionary/english/${encodeURIComponent(w.word)}" target="_blank" style="font-size:17px;color:var(--gold);text-decoration:none;border-bottom:1px solid var(--gold);letter-spacing:0.5px;${w.known?'text-decoration:line-through;color:var(--muted);border-bottom:none;':''}">${w.word}</a>
+            ${w.phonetic?`<span style="font-size:12px;color:var(--muted);">${w.phonetic}</span>`:''}
+            ${w.pos?`<span style="font-size:11px;color:var(--gold);opacity:0.7;">${w.pos}</span>`:''}
+          </div>
+          <div style="font-size:14px;color:var(--text);margin-bottom:4px;">${w.meaning}</div>
+          ${w.example?`<div style="font-size:13px;color:var(--muted);font-style:italic;line-height:1.7;">${w.example}</div>`:''}
         </div>
-        <div style="display:flex;gap:6px;flex-shrink:0;margin-left:8px;">
-          <button onclick="toggleWordKnown(${w.id})" style="background:none;border:1px solid ${w.known?'#7a9a6a':'var(--border)'};color:${w.known?'#7a9a6a':'var(--muted)'};padding:3px 8px;font-size:10px;letter-spacing:1px;cursor:pointer;border-radius:1px;font-family:'Noto Serif TC',serif;">${w.known?'✓ 已記住':'記住了'}</button>
-          <button onclick="deleteWord(${w.id})" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;">✕</button>
+        <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;margin-left:10px;align-items:flex-end;">
+          <button onclick="toggleWordKnown(${w.id})" style="background:none;border:1px solid ${w.known?'#7a9a6a':'var(--border)'};color:${w.known?'#7a9a6a':'var(--muted)'};padding:4px 10px;font-size:11px;letter-spacing:1px;cursor:pointer;border-radius:1px;font-family:'Noto Serif TC',serif;white-space:nowrap;">${w.known?'✓ 已記住':'記住了'}</button>
+          <button onclick="deleteWord(${w.id})" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;">✕ 刪除</button>
         </div>
       </div>
     </div>
