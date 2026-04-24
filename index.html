@@ -1708,6 +1708,7 @@ function getCourseProgressLabel(c){
 
 function renderHomeCourses(){
   const el=document.getElementById('homeCourseList');
+  if(!el) return;
   const active=courses.filter(c=>getCourseProgress(c)<100).slice(0,3);
   if(active.length===0){
     el.innerHTML=`<div class="empty-mini" onclick="showScreen('course')">＋ 點此新增課程</div>`;
