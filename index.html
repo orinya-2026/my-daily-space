@@ -841,12 +841,12 @@ input[type=range]::-webkit-slider-thumb{
   </div>
   <div class="screen-scroll">
     <div class="reflect-cats">
-      <button class="rcat active" onclick="setRCat('all',this)">全部</button>
-      <button class="rcat" onclick="setRCat('cardlib',this)">我的牌卡庫</button>
+      <button class="rcat active" onclick="setRCat('reminder',this)">今日感性提醒</button>
       <button class="rcat" onclick="setRCat('soul',this)">靈魂清理</button>
       <button class="rcat" onclick="setRCat('body',this)">身心合一</button>
       <button class="rcat" onclick="setRCat('life',this)">生命智慧</button>
       <button class="rcat" onclick="setRCat('gratitude',this)">感恩覺察</button>
+      <button class="rcat" onclick="setRCat('cardlib',this)">我的牌卡庫</button>
     </div>
 
     <!-- 牌卡庫寫入區（只有 cardlib 分類才顯示輸入框，不顯示隨機提示） -->
@@ -2001,8 +2001,8 @@ function showScreen(name){
   } else if(name==='reflect'){
     document.getElementById('reflectScreen').classList.add('active');
     document.getElementById('nav-reflect').classList.add('active');
-    const allBtn = document.querySelector('.rcat');
-    setRCat('all', allBtn);
+    const reminderBtn = document.querySelector('.rcat');
+    setRCat('reminder', reminderBtn);
   } else if(name==='course'){
     document.getElementById('courseScreen').classList.add('active');
     document.getElementById('nav-course').classList.add('active');
