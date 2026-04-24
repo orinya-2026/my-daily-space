@@ -940,58 +940,23 @@ input[type=range]::-webkit-slider-thumb{
 <div class="screen" id="englishScreen" style="padding-bottom:80px;">
   <div class="screen-header">
     <button class="back-btn" onclick="goHome()">←</button>
-    <div class="screen-title">英文筆記</div>
+    <div class="screen-title">每日單字</div>
   </div>
   <div class="screen-scroll">
 
-    <!-- Claude 開場白 -->
-    <div class="add-form" style="margin-bottom:14px;">
-      <div class="form-label">CLAUDE OPENER · 開場白</div>
-      <div style="font-size:13px;color:var(--text);line-height:1.85;letter-spacing:0.5px;background:rgba(160,120,40,0.05);border:1px solid var(--border);border-radius:1px;padding:12px;margin-bottom:10px;" id="openerText">我在學英文，程度 A2-B1，我們用生活小事練習，請繼續幫我。</div>
-      <button onclick="copyOpener()" class="btn-primary">複製開場白</button>
-    </div>
-
-    <!-- 本週單字 -->
+    <!-- AI 生成今日單字 -->
     <div class="add-form" style="margin-bottom:14px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <div class="form-label" style="margin:0;">THIS WEEK · 本週單字</div>
+        <div class="form-label" style="margin:0;">TODAY'S WORDS · 今日單字</div>
         <button onclick="generateWeeklyWords()" style="background:var(--gold);color:#fff;border:none;padding:6px 14px;font-family:'Noto Serif TC',serif;font-size:11px;letter-spacing:1px;cursor:pointer;border-radius:1px;">AI 生成</button>
       </div>
-      <div id="weeklyWordsList"><div style="text-align:center;padding:16px 0;color:var(--muted);font-size:13px;letter-spacing:1px;">點「AI 生成」取得本週5個單字 🌿</div></div>
+      <div id="weeklyWordsList"><div style="text-align:center;padding:16px 0;color:var(--muted);font-size:13px;letter-spacing:1px;">點「AI 生成」取得今日5個單字 🌿</div></div>
     </div>
 
     <!-- 我的單字本 -->
-    <div class="add-form" style="margin-bottom:14px;">
-      <div class="form-label">MY WORDS · 我的單字本</div>
-      <div class="f-col" style="margin-bottom:10px;">
-        <input type="text" id="wordInput" placeholder="單字（英文）">
-        <input type="text" id="wordMeaning" placeholder="中文意思">
-        <input type="text" id="wordExample" placeholder="例句（可選）">
-      </div>
-      <button class="btn-primary" onclick="addWord()">＋ 加入單字本</button>
-      <div id="wordList" style="margin-top:14px;"></div>
-    </div>
-
-    <!-- 我的句子本 -->
-    <div class="add-form" style="margin-bottom:14px;">
-      <div class="form-label">MY SENTENCES · 我的句子本</div>
-      <div class="f-col" style="margin-bottom:10px;">
-        <textarea id="sentenceChinese" placeholder="中文（你說的話）" rows="2" style="resize:none;"></textarea>
-        <textarea id="sentenceEnglish" placeholder="English（翻譯後）" rows="2" style="resize:none;"></textarea>
-      </div>
-      <button class="btn-primary" onclick="addSentence()">＋ 加入句子本</button>
-      <div id="sentenceList" style="margin-top:14px;"></div>
-    </div>
-
-    <!-- 文法小筆記 -->
-    <div class="add-form" style="margin-bottom:14px;">
-      <div class="form-label">GRAMMAR · 文法筆記</div>
-      <div class="f-col" style="margin-bottom:10px;">
-        <input type="text" id="grammarTitle" placeholder="標題（例：現在進行式）">
-        <textarea id="grammarNote" placeholder="筆記內容⋯⋯" rows="3" style="resize:none;"></textarea>
-      </div>
-      <button class="btn-primary" onclick="addGrammar()">＋ 加入文法筆記</button>
-      <div id="grammarList" style="margin-top:14px;"></div>
+    <div style="background:var(--panel);border-radius:2px;padding:16px;margin-left:-20px;margin-right:-20px;padding-left:20px;padding-right:20px;border-top:1px solid var(--border);">
+      <div style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:4px;color:var(--muted);margin-bottom:12px;">MY WORDS · 單字本</div>
+      <div id="wordList"></div>
     </div>
 
   </div>
@@ -2305,10 +2270,30 @@ function renderHomeTodos(){
   el.innerHTML = todayTodos.map(t=>`
     <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--card);border:1px solid var(--border);border-radius:2px;margin-bottom:8px;">
       <button onclick="toggleTodo(${t.id})" style="width:20px;height:20px;border-radius:50%;border:1.5px solid ${t.done?'var(--gold)':'var(--border)'};background:${t.done?'var(--gold)':'transparent'};cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;">${t.done?'✓':''}</button>
-      <div style="flex:1;font-size:14px;color:var(--text);letter-spacing:0.5px;${t.done?'text-decoration:line-through;color:var(--muted);':''}">${t.text}</div>
+      <div id="todo-text-${t.id}" style="flex:1;font-size:14px;color:var(--text);letter-spacing:0.5px;${t.done?'text-decoration:line-through;color:var(--muted);':''}" ondblclick="editTodo(${t.id})">${t.text}</div>
+      <input id="todo-input-${t.id}" type="text" value="${t.text}" style="display:none;flex:1;font-size:14px;padding:2px 6px;" onblur="saveTodoEdit(${t.id})" onkeydown="if(event.key==='Enter')saveTodoEdit(${t.id})">
       <button onclick="deleteTodo(${t.id})" style="background:none;border:none;font-size:12px;color:var(--muted);cursor:pointer;">✕</button>
     </div>
   `).join('');
+}
+
+function editTodo(id){
+  document.getElementById(`todo-text-${id}`).style.display='none';
+  const input = document.getElementById(`todo-input-${id}`);
+  input.style.display='block';
+  input.focus();
+  input.select();
+}
+
+function saveTodoEdit(id){
+  const input = document.getElementById(`todo-input-${id}`);
+  if(!input) return;
+  const newText = input.value.trim();
+  if(newText){
+    const t = todos.find(x=>x.id===id);
+    if(t){ t.text=newText; saveTodos(); }
+  }
+  renderHomeTodos();
 }
 
 // ── 英文頁 ──
@@ -2328,34 +2313,147 @@ function copyOpener(){
 }
 
 // AI 生成本週單字
+// ── 內建單字庫（B1-B2，生活情境）──
+const WORD_BANK = [
+  {word:"acknowledge",phonetic:"/əkˈnɒlɪdʒ/",pos:"v.","meaning":"承認；致謝",en:"She acknowledged her mistake gracefully.",zh:"她優雅地承認了錯誤。"},
+  {word:"ambiguous",phonetic:"/æmˈbɪɡjuəs/",pos:"adj.","meaning":"模糊的；不明確的",en:"His reply was ambiguous and confusing.",zh:"他的回答模糊又令人困惑。"},
+  {word:"anticipate",phonetic:"/ænˈtɪsɪpeɪt/",pos:"v.","meaning":"預期；期待",en:"I anticipate a busy weekend ahead.",zh:"我預期接下來會是忙碌的週末。"},
+  {word:"apparent",phonetic:"/əˈpærənt/",pos:"adj.","meaning":"明顯的；表面上的",en:"It was apparent that she was tired.",zh:"很明顯她累了。"},
+  {word:"aspire",phonetic:"/əˈspaɪər/",pos:"v.","meaning":"渴望；立志",en:"She aspires to travel the world someday.",zh:"她渴望有一天環遊世界。"},
+  {word:"authentic",phonetic:"/ɔːˈθentɪk/",pos:"adj.","meaning":"真實的；真誠的",en:"Be authentic in everything you do.",zh:"在你做的每件事上都要真誠。"},
+  {word:"balanced",phonetic:"/ˈbælənst/",pos:"adj.","meaning":"均衡的；平穩的",en:"A balanced diet keeps you healthy.",zh:"均衡的飲食讓你保持健康。"},
+  {word:"boundary",phonetic:"/ˈbaʊndri/",pos:"n.","meaning":"界限；邊界",en:"It's important to set clear boundaries.",zh:"設定清楚的界限很重要。"},
+  {word:"capable",phonetic:"/ˈkeɪpəbl/",pos:"adj.","meaning":"有能力的",en:"You are more capable than you think.",zh:"你比你想像的更有能力。"},
+  {word:"clarify",phonetic:"/ˈklærɪfaɪ/",pos:"v.","meaning":"澄清；說明",en:"Can you clarify what you mean?",zh:"你能說明你的意思嗎？"},
+  {word:"commitment",phonetic:"/kəˈmɪtmənt/",pos:"n.","meaning":"承諾；投入",en:"Success requires commitment and patience.",zh:"成功需要承諾和耐心。"},
+  {word:"compassion",phonetic:"/kəmˈpæʃn/",pos:"n.","meaning":"同情心；憐憫",en:"Show compassion to those around you.",zh:"對周遭的人展現同情心。"},
+  {word:"consistent",phonetic:"/kənˈsɪstənt/",pos:"adj.","meaning":"一致的；持續的",en:"Be consistent in your daily habits.",zh:"在日常習慣上要保持一致。"},
+  {word:"contribute",phonetic:"/kənˈtrɪbjuːt/",pos:"v.","meaning":"貢獻；捐助",en:"Everyone can contribute in small ways.",zh:"每個人都能以小方式做出貢獻。"},
+  {word:"convince",phonetic:"/kənˈvɪns/",pos:"v.","meaning":"說服；使相信",en:"She convinced me to try the new dish.",zh:"她說服我嘗試那道新菜。"},
+  {word:"curious",phonetic:"/ˈkjʊəriəs/",pos:"adj.","meaning":"好奇的",en:"Stay curious and keep learning.",zh:"保持好奇心並持續學習。"},
+  {word:"deadline",phonetic:"/ˈdedlaɪn/",pos:"n.","meaning":"截止日期",en:"The deadline is this Friday at noon.",zh:"截止日期是這週五中午。"},
+  {word:"deliberate",phonetic:"/dɪˈlɪbərət/",pos:"adj.","meaning":"故意的；深思熟慮的",en:"Her words were calm and deliberate.",zh:"她的話語冷靜而深思熟慮。"},
+  {word:"discipline",phonetic:"/ˈdɪsɪplɪn/",pos:"n.","meaning":"紀律；自律",en:"Discipline is the key to good habits.",zh:"自律是養成好習慣的關鍵。"},
+  {word:"diverse",phonetic:"/daɪˈvɜːrs/",pos:"adj.","meaning":"多樣的；不同的",en:"The city has a diverse food culture.",zh:"這個城市有多樣的飲食文化。"},
+  {word:"efficient",phonetic:"/ɪˈfɪʃnt/",pos:"adj.","meaning":"有效率的",en:"She found a more efficient way to work.",zh:"她找到了更有效率的工作方式。"},
+  {word:"embrace",phonetic:"/ɪmˈbreɪs/",pos:"v.","meaning":"擁抱；接受",en:"Embrace change with an open mind.",zh:"以開放的心態接受改變。"},
+  {word:"empathy",phonetic:"/ˈempəθi/",pos:"n.","meaning":"同理心",en:"Empathy helps build strong relationships.",zh:"同理心有助於建立穩固的關係。"},
+  {word:"encourage",phonetic:"/ɪnˈkʌrɪdʒ/",pos:"v.","meaning":"鼓勵；激勵",en:"She always encourages her students.",zh:"她總是鼓勵她的學生。"},
+  {word:"exhaust",phonetic:"/ɪɡˈzɔːst/",pos:"v.","meaning":"使精疲力竭；耗盡",en:"The long meeting exhausted everyone.",zh:"漫長的會議讓所有人精疲力竭。"},
+  {word:"flexible",phonetic:"/ˈfleksɪbl/",pos:"adj.","meaning":"靈活的；有彈性的",en:"Try to be flexible with your schedule.",zh:"試著在時間安排上保持彈性。"},
+  {word:"frustrate",phonetic:"/frʌˈstreɪt/",pos:"v.","meaning":"使沮喪；使受挫",en:"Delays can frustrate even the calmest person.",zh:"延誤會讓最冷靜的人也感到沮喪。"},
+  {word:"genuine",phonetic:"/ˈdʒenjuɪn/",pos:"adj.","meaning":"真誠的；真實的",en:"Her smile was warm and genuine.",zh:"她的微笑溫暖而真誠。"},
+  {word:"grateful",phonetic:"/ˈɡreɪtfl/",pos:"adj.","meaning":"感激的",en:"I'm grateful for every small moment.",zh:"我對每個小小的時刻都感到感激。"},
+  {word:"hesitate",phonetic:"/ˈhezɪteɪt/",pos:"v.","meaning":"猶豫；遲疑",en:"Don't hesitate to ask for help.",zh:"不要猶豫，開口求助吧。"},
+  {word:"highlight",phonetic:"/ˈhaɪlaɪt/",pos:"v.","meaning":"強調；突出",en:"She highlighted the key points clearly.",zh:"她清楚地強調了重點。"},
+  {word:"humble",phonetic:"/ˈhʌmbl/",pos:"adj.","meaning":"謙遜的；樸素的",en:"Stay humble even when you succeed.",zh:"即使成功也要保持謙遜。"},
+  {word:"impact",phonetic:"/ˈɪmpækt/",pos:"n.","meaning":"影響；衝擊",en:"Small actions can have a big impact.",zh:"小小的行動可以產生很大的影響。"},
+  {word:"independence",phonetic:"/ˌɪndɪˈpendəns/",pos:"n.","meaning":"獨立；自主",en:"Financial independence gives you freedom.",zh:"財務獨立給你自由。"},
+  {word:"initiative",phonetic:"/ɪˈnɪʃətɪv/",pos:"n.","meaning":"主動性；倡議",en:"She took the initiative to solve the problem.",zh:"她主動解決了這個問題。"},
+  {word:"inspire",phonetic:"/ɪnˈspaɪər/",pos:"v.","meaning":"激勵；啟發",en:"Nature often inspires her creativity.",zh:"大自然常常激發她的創造力。"},
+  {word:"instinct",phonetic:"/ˈɪnstɪŋkt/",pos:"n.","meaning":"本能；直覺",en:"Trust your instinct when making decisions.",zh:"做決定時相信你的直覺。"},
+  {word:"intention",phonetic:"/ɪnˈtenʃn/",pos:"n.","meaning":"意圖；目的",en:"Good intentions are not always enough.",zh:"好的意圖並不總是足夠的。"},
+  {word:"intuition",phonetic:"/ˌɪntjuˈɪʃn/",pos:"n.","meaning":"直覺；第六感",en:"Her intuition told her something was wrong.",zh:"她的直覺告訴她有什麼不對勁。"},
+  {word:"journal",phonetic:"/ˈdʒɜːrnl/",pos:"n.","meaning":"日記；期刊",en:"Writing in a journal helps clear your mind.",zh:"寫日記有助於理清思緒。"},
+  {word:"mindful",phonetic:"/ˈmaɪndfəl/",pos:"adj.","meaning":"留心的；正念的",en:"Be mindful of how you spend your energy.",zh:"留意你如何使用自己的精力。"},
+  {word:"momentum",phonetic:"/məˈmentəm/",pos:"n.","meaning":"動力；勢頭",en:"Once you start, it's easier to build momentum.",zh:"一旦開始，就更容易積累動力。"},
+  {word:"negotiate",phonetic:"/nɪˈɡəʊʃieɪt/",pos:"v.","meaning":"談判；協商",en:"They negotiated a fair price together.",zh:"他們一起協商出一個合理的價格。"},
+  {word:"nurture",phonetic:"/ˈnɜːrtʃər/",pos:"v.","meaning":"培養；滋養",en:"Nurture your relationships with care.",zh:"用心培養你的人際關係。"},
+  {word:"obstacle",phonetic:"/ˈɒbstəkl/",pos:"n.","meaning":"障礙；阻礙",en:"Every obstacle is a chance to grow.",zh:"每個障礙都是成長的機會。"},
+  {word:"optimistic",phonetic:"/ˌɒptɪˈmɪstɪk/",pos:"adj.","meaning":"樂觀的",en:"Stay optimistic even on hard days.",zh:"即使在艱難的日子也要保持樂觀。"},
+  {word:"overwhelm",phonetic:"/ˌəʊvəˈwelm/",pos:"v.","meaning":"使不知所措；壓倒",en:"Don't let small tasks overwhelm you.",zh:"不要讓小任務讓你不知所措。"},
+  {word:"patience",phonetic:"/ˈpeɪʃns/",pos:"n.","meaning":"耐心",en:"Patience is a virtue worth practising.",zh:"耐心是值得練習的美德。"},
+  {word:"perceive",phonetic:"/pəˈsiːv/",pos:"v.","meaning":"感知；察覺",en:"How you perceive things shapes your reality.",zh:"你感知事物的方式塑造了你的現實。"},
+  {word:"persistence",phonetic:"/pəˈsɪstəns/",pos:"n.","meaning":"堅持；毅力",en:"Persistence is more important than talent.",zh:"堅持比天賦更重要。"},
+  {word:"perspective",phonetic:"/pəˈspektɪv/",pos:"n.","meaning":"觀點；視角",en:"Try to see things from a new perspective.",zh:"試著從新的角度看事情。"},
+  {word:"prioritize",phonetic:"/praɪˈɒrɪtaɪz/",pos:"v.","meaning":"優先處理",en:"Learn to prioritize what truly matters.",zh:"學會優先處理真正重要的事。"},
+  {word:"productive",phonetic:"/prəˈdʌktɪv/",pos:"adj.","meaning":"有生產力的",en:"A morning routine makes me more productive.",zh:"晨間例行程序讓我更有生產力。"},
+  {word:"profound",phonetic:"/prəˈfaʊnd/",pos:"adj.","meaning":"深刻的；意義深遠的",en:"That book had a profound effect on me.",zh:"那本書對我產生了深刻的影響。"},
+  {word:"reflect",phonetic:"/rɪˈflekt/",pos:"v.","meaning":"反思；倒映",en:"Take time to reflect on your day.",zh:"花時間反思你的一天。"},
+  {word:"resilience",phonetic:"/rɪˈzɪliəns/",pos:"n.","meaning":"韌性；復原力",en:"Resilience helps you bounce back from failure.",zh:"韌性幫助你從失敗中重新站起來。"},
+  {word:"resolve",phonetic:"/rɪˈzɒlv/",pos:"v.","meaning":"解決；決心",en:"She resolved to wake up earlier each day.",zh:"她決心每天早點起床。"},
+  {word:"routine",phonetic:"/ruːˈtiːn/",pos:"n.","meaning":"例行程序；慣例",en:"A good routine creates stability.",zh:"好的例行程序能創造穩定感。"},
+  {word:"sensitive",phonetic:"/ˈsensɪtɪv/",pos:"adj.","meaning":"敏感的；體貼的",en:"She's very sensitive to others' feelings.",zh:"她對他人的感受非常敏感。"},
+  {word:"significant",phonetic:"/sɪɡˈnɪfɪkənt/",pos:"adj.","meaning":"重要的；顯著的",en:"This is a significant step forward.",zh:"這是重要的一步。"},
+  {word:"simplify",phonetic:"/ˈsɪmplɪfaɪ/",pos:"v.","meaning":"簡化",en:"Try to simplify your daily tasks.",zh:"試著簡化你的日常任務。"},
+  {word:"sincere",phonetic:"/sɪnˈsɪər/",pos:"adj.","meaning":"真誠的；誠摯的",en:"A sincere apology goes a long way.",zh:"真誠的道歉效果很大。"},
+  {word:"spontaneous",phonetic:"/spɒnˈteɪniəs/",pos:"adj.","meaning":"自發的；即興的",en:"She made a spontaneous trip to the coast.",zh:"她即興來了一趟海邊之旅。"},
+  {word:"struggle",phonetic:"/ˈstrʌɡl/",pos:"v.","meaning":"掙扎；奮鬥",en:"It's okay to struggle sometimes.",zh:"有時候掙扎是沒關係的。"},
+  {word:"subtle",phonetic:"/ˈsʌtl/",pos:"adj.","meaning":"微妙的；細膩的",en:"There's a subtle difference in meaning.",zh:"意思上有微妙的差異。"},
+  {word:"sufficient",phonetic:"/səˈfɪʃnt/",pos:"adj.","meaning":"足夠的",en:"Eight hours of sleep is sufficient for most people.",zh:"對大多數人來說八小時睡眠已足夠。"},
+  {word:"support",phonetic:"/səˈpɔːrt/",pos:"v.","meaning":"支持；支撐",en:"Good friends support you without judgment.",zh:"好朋友在不評判的情況下支持你。"},
+  {word:"surrender",phonetic:"/səˈrendər/",pos:"v.","meaning":"放下；臣服",en:"Sometimes surrendering control brings peace.",zh:"有時候放下控制反而帶來平靜。"},
+  {word:"sustain",phonetic:"/səˈsteɪn/",pos:"v.","meaning":"維持；支撐",en:"It's hard to sustain motivation every day.",zh:"每天維持動力是困難的。"},
+  {word:"tendency",phonetic:"/ˈtendənsi/",pos:"n.","meaning":"傾向；趨勢",en:"She has a tendency to overthink.",zh:"她有過度思考的傾向。"},
+  {word:"tolerance",phonetic:"/ˈtɒlərəns/",pos:"n.","meaning":"包容；容忍",en:"Tolerance is essential in a diverse world.",zh:"在多元的世界中，包容是不可或缺的。"},
+  {word:"transform",phonetic:"/trænsˈfɔːrm/",pos:"v.","meaning":"轉變；改變",en:"Small habits can transform your life.",zh:"小習慣可以改變你的生活。"},
+  {word:"transparent",phonetic:"/trænsˈpærənt/",pos:"adj.","meaning":"透明的；坦誠的",en:"Being transparent builds trust.",zh:"坦誠可以建立信任。"},
+  {word:"uncertainty",phonetic:"/ʌnˈsɜːrtnti/",pos:"n.","meaning":"不確定性",en:"Learn to sit with uncertainty.",zh:"學會與不確定性共處。"},
+  {word:"unique",phonetic:"/juˈniːk/",pos:"adj.","meaning":"獨特的；唯一的",en:"Everyone has a unique way of seeing things.",zh:"每個人都有獨特的看事方式。"},
+  {word:"unwind",phonetic:"/ʌnˈwaɪnd/",pos:"v.","meaning":"放鬆；鬆弛",en:"I like to unwind with a cup of tea.",zh:"我喜歡喝杯茶來放鬆。"},
+  {word:"validate",phonetic:"/ˈvælɪdeɪt/",pos:"v.","meaning":"認可；驗證",en:"It feels good to have your feelings validated.",zh:"被認可自己的感受是很好的感覺。"},
+  {word:"value",phonetic:"/ˈvæljuː/",pos:"n.","meaning":"價值；重要性",en:"Know your own value and worth.",zh:"了解自己的價值和重要性。"},
+  {word:"vulnerability",phonetic:"/ˌvʌlnərəˈbɪlɪti/",pos:"n.","meaning":"脆弱；易受傷性",en:"Vulnerability is a sign of courage.",zh:"脆弱是勇氣的象徵。"},
+  {word:"wholesome",phonetic:"/ˈhəʊlsəm/",pos:"adj.","meaning":"健康的；有益身心的",en:"She enjoys wholesome weekend activities.",zh:"她喜歡有益身心的週末活動。"},
+  {word:"withdraw",phonetic:"/wɪðˈdrɔː/",pos:"v.","meaning":"退出；撤回",en:"He tends to withdraw when he's stressed.",zh:"他壓力大時傾向於退縮。"},
+  {word:"acknowledge",phonetic:"/əkˈnɒlɪdʒ/",pos:"v.","meaning":"承認；致謝",en:"She acknowledged her mistake gracefully.",zh:"她優雅地承認了錯誤。"},
+  {word:"absorb",phonetic:"/əbˈzɔːrb/",pos:"v.","meaning":"吸收；專注於",en:"She absorbed the lesson quickly.",zh:"她很快就吸收了這個教訓。"},
+  {word:"adapt",phonetic:"/əˈdæpt/",pos:"v.","meaning":"適應；調整",en:"We must adapt to new situations.",zh:"我們必須適應新情況。"},
+  {word:"adequate",phonetic:"/ˈædɪkwət/",pos:"adj.","meaning":"足夠的；適當的",en:"Make sure you get adequate rest.",zh:"確保你有足夠的休息。"},
+  {word:"admire",phonetic:"/ədˈmaɪər/",pos:"v.","meaning":"欽佩；讚賞",en:"I admire her dedication and hard work.",zh:"我欽佩她的奉獻精神和努力。"},
+  {word:"advocate",phonetic:"/ˈædvəkeɪt/",pos:"v.","meaning":"提倡；支持",en:"She advocates for mental health awareness.",zh:"她提倡心理健康意識。"},
+  {word:"affection",phonetic:"/əˈfekʃn/",pos:"n.","meaning":"情感；喜愛",en:"Show affection to the people you love.",zh:"對你愛的人表達情感。"},
+  {word:"agency",phonetic:"/ˈeɪdʒənsi/",pos:"n.","meaning":"能動性；主動權",en:"You have more agency than you realise.",zh:"你擁有比你意識到的更多的主動權。"},
+  {word:"alert",phonetic:"/əˈlɜːrt/",pos:"adj.","meaning":"警覺的；機敏的",en:"Stay alert and aware of your surroundings.",zh:"保持警覺並留意周遭環境。"},
+  {word:"alignment",phonetic:"/əˈlaɪnmənt/",pos:"n.","meaning":"一致；對齊",en:"Find alignment between your values and actions.",zh:"找到你的價值觀與行動之間的一致性。"},
+  {word:"allocate",phonetic:"/ˈæləkeɪt/",pos:"v.","meaning":"分配；撥出",en:"Allocate time for rest each day.",zh:"每天為休息分配時間。"},
+  {word:"articulate",phonetic:"/ɑːˈtɪkjuleɪt/",pos:"v.","meaning":"清楚表達",en:"She articulated her ideas very well.",zh:"她非常清楚地表達了她的想法。"},
+  {word:"assert",phonetic:"/əˈsɜːrt/",pos:"v.","meaning":"主張；堅持",en:"Learn to assert your needs calmly.",zh:"學會冷靜地主張自己的需求。"},
+  {word:"attentive",phonetic:"/əˈtentɪv/",pos:"adj.","meaning":"專注的；體貼的",en:"Be attentive when someone is speaking.",zh:"當有人說話時要專注傾聽。"},
+  {word:"balance",phonetic:"/ˈbæləns/",pos:"n.","meaning":"平衡；均衡",en:"Find balance between work and rest.",zh:"在工作和休息之間找到平衡。"},
+  {word:"breathe",phonetic:"/briːð/",pos:"v.","meaning":"呼吸；放鬆",en:"Just breathe and take it one step at a time.",zh:"深呼吸，一步一步來。"},
+  {word:"candid",phonetic:"/ˈkændɪd/",pos:"adj.","meaning":"坦率的；直言的",en:"I appreciated her candid feedback.",zh:"我很感謝她坦率的反饋。"},
+  {word:"cherish",phonetic:"/ˈtʃerɪʃ/",pos:"v.","meaning":"珍惜；珍愛",en:"Cherish the people who support you.",zh:"珍惜支持你的人。"},
+  {word:"clarity",phonetic:"/ˈklærɪti/",pos:"n.","meaning":"清晰；明確",en:"Clarity of mind helps you make better choices.",zh:"思緒清晰有助於你做出更好的選擇。"},
+  {word:"collaborate",phonetic:"/kəˈlæbəreɪt/",pos:"v.","meaning":"合作；協作",en:"They collaborated on the project successfully.",zh:"他們成功地合作完成了這個專案。"},
+  {word:"contemplate",phonetic:"/ˈkɒntəmpleɪt/",pos:"v.","meaning":"深思；沉思",en:"Take time to contemplate your next move.",zh:"花時間深思你的下一步。"}
+];
+
 async function generateWeeklyWords(){
   const el = document.getElementById('weeklyWordsList');
-  el.innerHTML = `<div style="text-align:center;padding:16px 0;color:var(--muted);font-size:13px;letter-spacing:1px;">AI 生成中⋯⋯ 🌿</div>`;
-  try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:1000,
-        messages:[{
-          role:'user',
-          content:`我在學英文，程度 A2-B1，生活情境為主。請給我5個本週生活實用單字，每個包含：單字、音標、詞性、中文意思、一個簡單自然的例句（英文+中文）。請只回傳 JSON 陣列，格式如下，不要其他文字：
-[{"word":"example","phonetic":"/ɪɡˈzæmpl/","pos":"n.","meaning":"例子","en":"This is a good example.","zh":"這是一個好例子。"}]`
-        }]
-      })
-    });
-    const data = await resp.json();
-    const text = data.content[0].text.replace(/```json|```/g,'').trim();
-    const words = JSON.parse(text);
-    engWeeklyWords = words;
-    saveEngWeekly();
-    renderWeeklyWords();
-    renderHomeTodayWords();
-    showToast('✦ 本週單字已生成');
-  } catch(e){
-    el.innerHTML=`<div style="text-align:center;padding:16px 0;color:#c0392b;font-size:13px;">生成失敗，請再試一次</div>`;
+  el.innerHTML = `<div style="text-align:center;padding:16px 0;color:var(--muted);font-size:13px;letter-spacing:1px;">抽取今日單字⋯⋯ 🌿</div>`;
+
+  // 隨機抽5個，避免重複今日已顯示的
+  const pool = [...WORD_BANK];
+  const picked = [];
+  while(picked.length < 5 && pool.length > 0){
+    const idx = Math.floor(Math.random() * pool.length);
+    picked.push(pool.splice(idx, 1)[0]);
   }
+
+  engWeeklyWords = picked;
+  saveEngWeekly();
+
+  // 自動加入單字本（不重複）
+  picked.forEach(w => {
+    const exists = engWords.find(x=>x.word.toLowerCase()===w.word.toLowerCase());
+    if(!exists){
+      engWords.unshift({
+        id: Date.now() + Math.random(),
+        word: w.word,
+        meaning: w.meaning,
+        example: `${w.en}　${w.zh}`,
+        phonetic: w.phonetic||'',
+        pos: w.pos||'',
+        known: false,
+        date: new Date().toLocaleDateString('zh-TW')
+      });
+    }
+  });
+  saveEngWords();
+  renderWeeklyWords();
+  renderWordList();
+  showToast('✦ 今日5個單字已加入單字本');
 }
 
 function renderWeeklyWords(){
