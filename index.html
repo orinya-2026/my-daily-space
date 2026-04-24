@@ -65,6 +65,26 @@ function initFirebase(){
     fbListen('cardlib', 'myspace_cardlib', ()=>{
       renderTodayCards(); renderCalendar();
     });
+    fbListen('todos', 'myspace_todos', ()=>{
+      todos = JSON.parse(localStorage.getItem('myspace_todos')||'[]');
+      renderHomeTodos();
+    });
+    fbListen('engWords', 'eng_words', ()=>{
+      engWords = JSON.parse(localStorage.getItem('eng_words')||'[]');
+      renderWordList();
+    });
+    fbListen('engSentences', 'eng_sentences', ()=>{
+      engSentences = JSON.parse(localStorage.getItem('eng_sentences')||'[]');
+      renderSentenceList();
+    });
+    fbListen('engGrammar', 'eng_grammar', ()=>{
+      engGrammar = JSON.parse(localStorage.getItem('eng_grammar')||'[]');
+      renderGrammarList();
+    });
+    fbListen('engWeekly', 'eng_weekly', ()=>{
+      engWeeklyWords = JSON.parse(localStorage.getItem('eng_weekly')||'[]');
+      renderWeeklyWords(); renderHomeTodayWords();
+    });
 
     const el = document.getElementById('syncStatus');
     if(el){ el.textContent = '☁ 已連線'; el.style.color = '#7a9a6a'; }
@@ -670,23 +690,20 @@ input[type=range]::-webkit-slider-thumb{
     <!-- 選中日期的記錄面板 -->
     <div class="day-detail" id="dayDetail" style="display:none;"></div>
 
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;margin-top:14px;">
-      <div class="section-title" style="margin:0;">REFLECTIONS · 近期反思</div>
-      <button onclick="showScreen('reflect')" style="background:none;border:none;font-size:11px;color:var(--gold);letter-spacing:1px;cursor:pointer;font-family:'Noto Serif TC',serif;">全部 →</button>
+    <!-- 今日待辦 -->
+    <div style="margin-top:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div class="section-title" style="margin:0;">TODAY · 今日待辦</div>
+        <button onclick="addTodoFromHome()" style="background:none;border:none;font-size:11px;color:var(--gold);letter-spacing:1px;cursor:pointer;font-family:'Noto Serif TC',serif;">＋ 新增</button>
+      </div>
+      <div id="homeTodoList"></div>
+      <div id="homeTodoInput" style="display:none;margin-top:8px;">
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="todoInputText" placeholder="輸入待辦事項⋯⋯" style="flex:1;font-size:13px;">
+          <button onclick="saveTodo()" style="background:var(--gold);color:#fff;border:none;padding:8px 14px;font-family:'Noto Serif TC',serif;font-size:12px;cursor:pointer;border-radius:1px;white-space:nowrap;">儲存</button>
+        </div>
+      </div>
     </div>
-    <div id="homeReflectList"></div>
-
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;margin-top:8px;">
-      <div class="section-title" style="margin:0;">LEARNING · 學習進度</div>
-      <button onclick="showScreen('course')" style="background:none;border:none;font-size:11px;color:var(--gold);letter-spacing:1px;cursor:pointer;font-family:'Noto Serif TC',serif;">全部 →</button>
-    </div>
-    <div id="homeCourseList"></div>
-
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;margin-top:8px;">
-      <div class="section-title" style="margin:0;">READING · 閱讀中</div>
-      <button onclick="showScreen('reading')" style="background:none;border:none;font-size:11px;color:var(--gold);letter-spacing:1px;cursor:pointer;font-family:'Noto Serif TC',serif;">全部 →</button>
-    </div>
-    <div id="homeBookList"></div>
 
     <!-- 備份區 -->
     <div style="margin-top:20px;margin-bottom:8px;padding:14px 16px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;">
@@ -910,6 +927,67 @@ input[type=range]::-webkit-slider-thumb{
   </div>
 </div>
 
+<!-- ═══ ENGLISH SCREEN ═══ -->
+<div class="screen" id="englishScreen" style="padding-bottom:80px;">
+  <div class="screen-header">
+    <button class="back-btn" onclick="goHome()">←</button>
+    <div class="screen-title">英文筆記</div>
+  </div>
+  <div class="screen-scroll">
+
+    <!-- Claude 開場白 -->
+    <div class="add-form" style="margin-bottom:14px;">
+      <div class="form-label">CLAUDE OPENER · 開場白</div>
+      <div style="font-size:13px;color:var(--text);line-height:1.85;letter-spacing:0.5px;background:rgba(160,120,40,0.05);border:1px solid var(--border);border-radius:1px;padding:12px;margin-bottom:10px;" id="openerText">我在學英文，程度 A2-B1，我們用生活小事練習，請繼續幫我。</div>
+      <button onclick="copyOpener()" class="btn-primary">複製開場白</button>
+    </div>
+
+    <!-- 本週單字 -->
+    <div class="add-form" style="margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div class="form-label" style="margin:0;">THIS WEEK · 本週單字</div>
+        <button onclick="generateWeeklyWords()" style="background:var(--gold);color:#fff;border:none;padding:6px 14px;font-family:'Noto Serif TC',serif;font-size:11px;letter-spacing:1px;cursor:pointer;border-radius:1px;">AI 生成</button>
+      </div>
+      <div id="weeklyWordsList"><div style="text-align:center;padding:16px 0;color:var(--muted);font-size:13px;letter-spacing:1px;">點「AI 生成」取得本週5個單字 🌿</div></div>
+    </div>
+
+    <!-- 我的單字本 -->
+    <div class="add-form" style="margin-bottom:14px;">
+      <div class="form-label">MY WORDS · 我的單字本</div>
+      <div class="f-col" style="margin-bottom:10px;">
+        <input type="text" id="wordInput" placeholder="單字（英文）">
+        <input type="text" id="wordMeaning" placeholder="中文意思">
+        <input type="text" id="wordExample" placeholder="例句（可選）">
+      </div>
+      <button class="btn-primary" onclick="addWord()">＋ 加入單字本</button>
+      <div id="wordList" style="margin-top:14px;"></div>
+    </div>
+
+    <!-- 我的句子本 -->
+    <div class="add-form" style="margin-bottom:14px;">
+      <div class="form-label">MY SENTENCES · 我的句子本</div>
+      <div class="f-col" style="margin-bottom:10px;">
+        <textarea id="sentenceChinese" placeholder="中文（你說的話）" rows="2" style="resize:none;"></textarea>
+        <textarea id="sentenceEnglish" placeholder="English（翻譯後）" rows="2" style="resize:none;"></textarea>
+      </div>
+      <button class="btn-primary" onclick="addSentence()">＋ 加入句子本</button>
+      <div id="sentenceList" style="margin-top:14px;"></div>
+    </div>
+
+    <!-- 文法小筆記 -->
+    <div class="add-form" style="margin-bottom:14px;">
+      <div class="form-label">GRAMMAR · 文法筆記</div>
+      <div class="f-col" style="margin-bottom:10px;">
+        <input type="text" id="grammarTitle" placeholder="標題（例：現在進行式）">
+        <textarea id="grammarNote" placeholder="筆記內容⋯⋯" rows="3" style="resize:none;"></textarea>
+      </div>
+      <button class="btn-primary" onclick="addGrammar()">＋ 加入文法筆記</button>
+      <div id="grammarList" style="margin-top:14px;"></div>
+    </div>
+
+  </div>
+</div>
+
 <!-- ═══ BOTTOM NAV ═══ -->
 <div class="bottom-nav">
   <button class="nav-btn active" id="nav-home" onclick="showScreen('home')">
@@ -927,6 +1005,10 @@ input[type=range]::-webkit-slider-thumb{
   <button class="nav-btn" id="nav-reading" onclick="showScreen('reading')">
     <div class="nav-icon">📖</div>
     <div class="nav-label">閱讀</div>
+  </button>
+  <button class="nav-btn" id="nav-english" onclick="showScreen('english')">
+    <div class="nav-icon">🔤</div>
+    <div class="nav-label">英文</div>
   </button>
 </div>
 
@@ -1913,6 +1995,10 @@ function showScreen(name){
     document.getElementById('readingScreen').classList.add('active');
     document.getElementById('nav-reading').classList.add('active');
     showReadingTab('list');
+  } else if(name==='english'){
+    document.getElementById('englishScreen').classList.add('active');
+    document.getElementById('nav-english').classList.add('active');
+    renderWordList(); renderSentenceList(); renderGrammarList(); renderWeeklyWords();
   }
 }
 function goHome(){showScreen('home');}
@@ -2164,7 +2250,242 @@ function renderReview(){
   `;
 }
 
-// ── HOME REFLECT ──
+// ── 今日待辦 ──
+let todos = JSON.parse(localStorage.getItem('myspace_todos')||'[]');
+function saveTodos(){
+  localStorage.setItem('myspace_todos', JSON.stringify(todos));
+  if(window.fbSave) fbSave('todos', todos);
+}
+
+function addTodoFromHome(){
+  const el = document.getElementById('homeTodoInput');
+  el.style.display = el.style.display==='none'?'block':'none';
+  if(el.style.display==='block') document.getElementById('todoInputText').focus();
+}
+
+function saveTodo(){
+  const text = document.getElementById('todoInputText').value.trim();
+  if(!text){ showToast('請輸入待辦內容'); return; }
+  todos.unshift({ id:Date.now(), text, done:false, dateKey:todayKey() });
+  saveTodos();
+  document.getElementById('todoInputText').value='';
+  document.getElementById('homeTodoInput').style.display='none';
+  renderHomeTodos();
+  showToast('✦ 已加入待辦');
+}
+
+function toggleTodo(id){
+  const t = todos.find(x=>x.id===id);
+  if(t){ t.done=!t.done; saveTodos(); renderHomeTodos(); }
+}
+
+function deleteTodo(id){
+  todos = todos.filter(x=>x.id!==id);
+  saveTodos(); renderHomeTodos();
+}
+
+function renderHomeTodos(){
+  const el = document.getElementById('homeTodoList');
+  if(!el) return;
+  const todayTodos = todos.filter(t=>t.dateKey===todayKey());
+  if(todayTodos.length===0){
+    el.innerHTML=`<div style="text-align:center;padding:12px 0;color:var(--muted);font-size:13px;letter-spacing:1px;">今天還沒有待辦 🌿</div>`;
+    return;
+  }
+  el.innerHTML = todayTodos.map(t=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--card);border:1px solid var(--border);border-radius:2px;margin-bottom:8px;">
+      <button onclick="toggleTodo(${t.id})" style="width:20px;height:20px;border-radius:50%;border:1.5px solid ${t.done?'var(--gold)':'var(--border)'};background:${t.done?'var(--gold)':'transparent'};cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;">${t.done?'✓':''}</button>
+      <div style="flex:1;font-size:14px;color:var(--text);letter-spacing:0.5px;${t.done?'text-decoration:line-through;color:var(--muted);':''}">${t.text}</div>
+      <button onclick="deleteTodo(${t.id})" style="background:none;border:none;font-size:12px;color:var(--muted);cursor:pointer;">✕</button>
+    </div>
+  `).join('');
+}
+
+// ── 英文頁 ──
+let engWords = JSON.parse(localStorage.getItem('eng_words')||'[]');
+let engSentences = JSON.parse(localStorage.getItem('eng_sentences')||'[]');
+let engGrammar = JSON.parse(localStorage.getItem('eng_grammar')||'[]');
+let engWeeklyWords = JSON.parse(localStorage.getItem('eng_weekly')||'[]');
+
+function saveEngWords(){ localStorage.setItem('eng_words', JSON.stringify(engWords)); if(window.fbSave) fbSave('engWords', engWords); }
+function saveEngSentences(){ localStorage.setItem('eng_sentences', JSON.stringify(engSentences)); if(window.fbSave) fbSave('engSentences', engSentences); }
+function saveEngGrammar(){ localStorage.setItem('eng_grammar', JSON.stringify(engGrammar)); if(window.fbSave) fbSave('engGrammar', engGrammar); }
+function saveEngWeekly(){ localStorage.setItem('eng_weekly', JSON.stringify(engWeeklyWords)); if(window.fbSave) fbSave('engWeekly', engWeeklyWords); }
+
+function copyOpener(){
+  const text = document.getElementById('openerText').textContent;
+  navigator.clipboard.writeText(text).then(()=>showToast('✦ 已複製開場白'));
+}
+
+// AI 生成本週單字
+async function generateWeeklyWords(){
+  const el = document.getElementById('weeklyWordsList');
+  el.innerHTML = `<div style="text-align:center;padding:16px 0;color:var(--muted);font-size:13px;letter-spacing:1px;">AI 生成中⋯⋯ 🌿</div>`;
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        messages:[{
+          role:'user',
+          content:`我在學英文，程度 A2-B1，生活情境為主。請給我5個本週生活實用單字，每個包含：單字、音標、詞性、中文意思、一個簡單自然的例句（英文+中文）。請只回傳 JSON 陣列，格式如下，不要其他文字：
+[{"word":"example","phonetic":"/ɪɡˈzæmpl/","pos":"n.","meaning":"例子","en":"This is a good example.","zh":"這是一個好例子。"}]`
+        }]
+      })
+    });
+    const data = await resp.json();
+    const text = data.content[0].text.replace(/```json|```/g,'').trim();
+    const words = JSON.parse(text);
+    engWeeklyWords = words;
+    saveEngWeekly();
+    renderWeeklyWords();
+    renderHomeTodayWords();
+    showToast('✦ 本週單字已生成');
+  } catch(e){
+    el.innerHTML=`<div style="text-align:center;padding:16px 0;color:#c0392b;font-size:13px;">生成失敗，請再試一次</div>`;
+  }
+}
+
+function renderWeeklyWords(){
+  const el = document.getElementById('weeklyWordsList');
+  if(!el) return;
+  if(engWeeklyWords.length===0){
+    el.innerHTML=`<div style="text-align:center;padding:16px 0;color:var(--muted);font-size:13px;letter-spacing:1px;">點「AI 生成」取得本週5個單字 🌿</div>`;
+    return;
+  }
+  el.innerHTML = engWeeklyWords.map(w=>`
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:2px;padding:12px 14px;margin-bottom:10px;">
+      <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:4px;">
+        <span style="font-size:17px;font-weight:400;color:var(--text);">${w.word}</span>
+        <span style="font-size:12px;color:var(--muted);">${w.phonetic||''}</span>
+        <span style="font-size:11px;color:var(--gold);">${w.pos||''}</span>
+      </div>
+      <div style="font-size:13px;color:var(--text);margin-bottom:6px;">${w.meaning}</div>
+      <div style="font-size:12px;color:var(--muted);font-style:italic;line-height:1.7;">${w.en}<br>${w.zh}</div>
+    </div>
+  `).join('');
+}
+
+function renderHomeTodayWords(){
+  const el = document.getElementById('homeTodayWords');
+  if(!el) return;
+  if(engWeeklyWords.length===0){
+    el.innerHTML=`<div onclick="showScreen('english')" style="cursor:pointer;text-align:center;padding:10px 0;color:var(--muted);font-size:12px;letter-spacing:1px;">還沒有本週單字 · 點此去生成</div>`;
+    return;
+  }
+  el.innerHTML = engWeeklyWords.map(w=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:14px;font-weight:400;color:var(--text);min-width:80px;">${w.word}</span>
+      <span style="font-size:12px;color:var(--muted);">${w.meaning}</span>
+    </div>
+  `).join('');
+}
+
+function addWord(){
+  const word = document.getElementById('wordInput').value.trim();
+  const meaning = document.getElementById('wordMeaning').value.trim();
+  if(!word||!meaning){ showToast('請輸入單字和意思'); return; }
+  engWords.unshift({
+    id:Date.now(), word, meaning,
+    example: document.getElementById('wordExample').value.trim(),
+    known:false, date: new Date().toLocaleDateString('zh-TW')
+  });
+  saveEngWords();
+  document.getElementById('wordInput').value='';
+  document.getElementById('wordMeaning').value='';
+  document.getElementById('wordExample').value='';
+  renderWordList(); showToast('✦ 已加入單字本');
+}
+
+function renderWordList(){
+  const el = document.getElementById('wordList');
+  if(!el) return;
+  if(engWords.length===0){ el.innerHTML=''; return; }
+  el.innerHTML = engWords.map(w=>`
+    <div style="background:${w.known?'rgba(122,154,106,0.08)':'var(--panel)'};border:1px solid var(--border);border-radius:2px;padding:12px 14px;margin-bottom:8px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div style="flex:1;">
+          <span style="font-size:16px;color:var(--text);${w.known?'text-decoration:line-through;color:var(--muted);':''}">${w.word}</span>
+          <span style="font-size:13px;color:var(--muted);margin-left:8px;">${w.meaning}</span>
+          ${w.example?`<div style="font-size:12px;color:var(--muted);font-style:italic;margin-top:4px;">${w.example}</div>`:''}
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0;margin-left:8px;">
+          <button onclick="toggleWordKnown(${w.id})" style="background:none;border:1px solid ${w.known?'#7a9a6a':'var(--border)'};color:${w.known?'#7a9a6a':'var(--muted)'};padding:3px 8px;font-size:10px;letter-spacing:1px;cursor:pointer;border-radius:1px;font-family:'Noto Serif TC',serif;">${w.known?'✓ 已記住':'記住了'}</button>
+          <button onclick="deleteWord(${w.id})" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;">✕</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleWordKnown(id){
+  const w = engWords.find(x=>x.id===id);
+  if(w){ w.known=!w.known; saveEngWords(); renderWordList(); }
+}
+function deleteWord(id){
+  engWords = engWords.filter(x=>x.id!==id);
+  saveEngWords(); renderWordList();
+}
+
+function addSentence(){
+  const zh = document.getElementById('sentenceChinese').value.trim();
+  const en = document.getElementById('sentenceEnglish').value.trim();
+  if(!zh||!en){ showToast('請輸入中文和英文'); return; }
+  engSentences.unshift({ id:Date.now(), zh, en, date:new Date().toLocaleDateString('zh-TW') });
+  saveEngSentences();
+  document.getElementById('sentenceChinese').value='';
+  document.getElementById('sentenceEnglish').value='';
+  renderSentenceList(); showToast('✦ 已加入句子本');
+}
+
+function renderSentenceList(){
+  const el = document.getElementById('sentenceList');
+  if(!el) return;
+  if(engSentences.length===0){ el.innerHTML=''; return; }
+  el.innerHTML = engSentences.map(s=>`
+    <div style="background:var(--panel);border:1px solid var(--border);border-radius:2px;padding:12px 14px;margin-bottom:8px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div style="flex:1;">
+          <div style="font-size:13px;color:var(--muted);margin-bottom:4px;">${s.zh}</div>
+          <div style="font-size:15px;color:var(--text);font-style:italic;">${s.en}</div>
+        </div>
+        <button onclick="deleteSentence(${s.id})" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;margin-left:8px;">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+function deleteSentence(id){ engSentences=engSentences.filter(x=>x.id!==id); saveEngSentences(); renderSentenceList(); }
+
+function addGrammar(){
+  const title = document.getElementById('grammarTitle').value.trim();
+  const note = document.getElementById('grammarNote').value.trim();
+  if(!title||!note){ showToast('請輸入標題和內容'); return; }
+  engGrammar.unshift({ id:Date.now(), title, note, date:new Date().toLocaleDateString('zh-TW') });
+  saveEngGrammar();
+  document.getElementById('grammarTitle').value='';
+  document.getElementById('grammarNote').value='';
+  renderGrammarList(); showToast('✦ 已加入文法筆記');
+}
+
+function renderGrammarList(){
+  const el = document.getElementById('grammarList');
+  if(!el) return;
+  if(engGrammar.length===0){ el.innerHTML=''; return; }
+  el.innerHTML = engGrammar.map(g=>`
+    <div style="background:var(--panel);border:1px solid var(--border);border-radius:2px;padding:12px 14px;margin-bottom:8px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div style="flex:1;">
+          <div style="font-size:14px;font-weight:400;color:var(--gold);margin-bottom:6px;">${g.title}</div>
+          <div style="font-size:13px;color:var(--text);line-height:1.8;white-space:pre-wrap;">${g.note}</div>
+        </div>
+        <button onclick="deleteGrammar(${g.id})" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;margin-left:8px;">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+function deleteGrammar(id){ engGrammar=engGrammar.filter(x=>x.id!==id); saveEngGrammar(); renderGrammarList(); }
 function renderHomeReflect(){
   const el = document.getElementById('homeReflectList');
   if(!el) return;
@@ -2226,6 +2547,11 @@ function exportBackup(){
     reflectEntries: JSON.parse(localStorage.getItem('reflect_entries')||'[]'),
     books: JSON.parse(localStorage.getItem('myspace_books')||'[]'),
     cardlib: JSON.parse(localStorage.getItem('myspace_cardlib')||'[]'),
+    todos: JSON.parse(localStorage.getItem('myspace_todos')||'[]'),
+    engWords: JSON.parse(localStorage.getItem('eng_words')||'[]'),
+    engSentences: JSON.parse(localStorage.getItem('eng_sentences')||'[]'),
+    engGrammar: JSON.parse(localStorage.getItem('eng_grammar')||'[]'),
+    engWeekly: JSON.parse(localStorage.getItem('eng_weekly')||'[]'),
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
@@ -2248,21 +2574,37 @@ function importBackup(event){
       if(data.reflectEntries) localStorage.setItem('reflect_entries', JSON.stringify(data.reflectEntries));
       if(data.books) localStorage.setItem('myspace_books', JSON.stringify(data.books));
       if(data.cardlib) localStorage.setItem('myspace_cardlib', JSON.stringify(data.cardlib));
+      if(data.todos) localStorage.setItem('myspace_todos', JSON.stringify(data.todos));
+      if(data.engWords) localStorage.setItem('eng_words', JSON.stringify(data.engWords));
+      if(data.engSentences) localStorage.setItem('eng_sentences', JSON.stringify(data.engSentences));
+      if(data.engGrammar) localStorage.setItem('eng_grammar', JSON.stringify(data.engGrammar));
+      if(data.engWeekly) localStorage.setItem('eng_weekly', JSON.stringify(data.engWeekly));
       courses = JSON.parse(localStorage.getItem('myspace_courses')||'[]');
       reflectEntries = JSON.parse(localStorage.getItem('reflect_entries')||'[]');
       books = JSON.parse(localStorage.getItem('myspace_books')||'[]');
-      // 同步推送到 Firebase（稍等確保連線穩定）
+      todos = JSON.parse(localStorage.getItem('myspace_todos')||'[]');
+      engWords = JSON.parse(localStorage.getItem('eng_words')||'[]');
+      engSentences = JSON.parse(localStorage.getItem('eng_sentences')||'[]');
+      engGrammar = JSON.parse(localStorage.getItem('eng_grammar')||'[]');
+      engWeeklyWords = JSON.parse(localStorage.getItem('eng_weekly')||'[]');
       setTimeout(()=>{
         if(window.fbSave){
           if(data.courses) fbSave('courses', data.courses);
           if(data.reflectEntries) fbSave('reflectEntries', data.reflectEntries);
           if(data.books) fbSave('books', data.books);
           if(data.cardlib) fbSave('cardlib', data.cardlib);
+          if(data.todos) fbSave('todos', data.todos);
+          if(data.engWords) fbSave('engWords', data.engWords);
+          if(data.engSentences) fbSave('engSentences', data.engSentences);
+          if(data.engGrammar) fbSave('engGrammar', data.engGrammar);
+          if(data.engWeekly) fbSave('engWeekly', data.engWeekly);
           showToast('☁ 資料已同步至雲端');
         }
       }, 2000);
-      renderHomeCourses(); renderFullCourses(); renderBookList(); renderHomeBooks(); renderHomeReflect(); renderTodayCards(); renderCalendar();
-      showToast('✦ 備份已還原並同步！');
+      renderHomeCourses(); renderFullCourses(); renderBookList(); renderHomeBooks();
+      renderHomeReflect(); renderTodayCards(); renderCalendar();
+      renderHomeTodos(); renderHomeTodayWords();
+      showToast('✦ 備份已還原！');
     } catch(err) {
       showToast('檔案格式錯誤');
     }
@@ -2275,6 +2617,7 @@ function importBackup(event){
 setGreeting();
 renderTodayCards();
 renderCalendar();
+renderHomeTodos();
 renderHomeCourses();
 renderFullCourses();
 renderBookList();
