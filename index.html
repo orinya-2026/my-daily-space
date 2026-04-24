@@ -852,7 +852,6 @@ input[type=range]::-webkit-slider-thumb{
     <!-- 牌卡庫寫入區（只有 cardlib 分類才顯示輸入框，不顯示隨機提示） -->
     <div id="cardlibWriteArea" style="display:none;">
       <div class="reflect-card">
-        <div class="reflect-tag">我的牌卡庫 · 今日抽牌</div>
         <div style="font-size:15px;color:var(--muted);line-height:1.9;letter-spacing:0.5px;">把今天抽到的牌卡句子寫下來，它會自動加入提示庫，未來隨機出現在各分類裡 🌿</div>
         <div class="reflect-sym">🃏</div>
       </div>
@@ -1477,7 +1476,6 @@ function newReflect(){
   setTimeout(()=>{
     el.textContent = pool[idx].text;
     document.getElementById('reflectSym').textContent = pool[idx].sym;
-    document.getElementById('reflectTag').textContent = catNames[pool[idx].cat] || '';
     el.classList.remove('fade');
   }, 350);
 }
