@@ -892,6 +892,8 @@ input[type=range]::-webkit-slider-thumb{
         <div class="j-note">文字只存在你的裝置</div>
       </div>
       <button class="btn-primary" style="margin-top:10px" onclick="saveReflectEntry()">✦ 儲存這筆反思</button>
+      <!-- 該分類的歷史記錄 -->
+      <div id="catRecordsList" style="margin-top:20px;"></div>
     </div>
     <div id="reflectAllArea" style="display:none">
       <div id="reflectEntriesList"></div>
@@ -1392,6 +1394,7 @@ function setRCat(cat, el){
     writeArea.style.display = 'block';
     document.getElementById('reflectJournal').value = '';
     newReflect();
+    renderCatRecords();
   }
 }
 
@@ -1484,6 +1487,26 @@ function deleteCard(id, btn){
   }
 }
 
+function renderCatRecords(){
+  const el = document.getElementById('catRecordsList');
+  if(!el) return;
+  const records = reflectEntries.filter(e => e.cat === currentRCat);
+  if(records.length === 0){
+    el.innerHTML = `<div style="text-align:center;padding:16px 0;color:var(--muted);font-size:13px;letter-spacing:1px;">還沒有${catNames[currentRCat]||''}的記錄 🌿</div>`;
+    return;
+  }
+  el.innerHTML = `<div style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:3px;color:var(--muted);margin-bottom:12px;">RECORDS · 我的記錄</div>`
+    + records.map(e=>`
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:2px;padding:14px 16px;margin-bottom:10px;">
+      <div style="font-size:11px;color:var(--muted);letter-spacing:1px;margin-bottom:8px;">${e.date} ${e.time||''}</div>
+      <textarea onchange="editEntry(${e.id}, this.value)" style="width:100%;background:transparent;border:none;border-bottom:1px solid var(--border);padding:0 0 8px;font-family:'Noto Serif TC',serif;font-size:15px;line-height:1.85;color:var(--text);letter-spacing:0.5px;resize:none;outline:none;min-height:60px;">${e.text}</textarea>
+      <div style="text-align:right;margin-top:8px;">
+        <button onclick="deleteEntry(${e.id}, this)" style="background:none;border:none;font-size:11px;color:var(--muted);cursor:pointer;letter-spacing:1px;font-family:'Noto Serif TC',serif;">刪除</button>
+      </div>
+    </div>
+  `).join('');
+}
+
 function newReflect(){
   const pool = getPrompts(currentRCat);
   const el = document.getElementById('reflectText');
@@ -1515,6 +1538,7 @@ function saveReflectEntry(){
   document.getElementById('reflectJournal').value = '';
   renderHomeReflect();
   renderCalendar();
+  renderCatRecords();
   showToast('✦ 反思已儲存');
 }
 
