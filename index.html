@@ -1272,6 +1272,7 @@ function calNext(){ calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCal
 
 function getEntryDates(){
   const dates = new Set();
+  // 靈性反思
   reflectEntries.forEach(e=>{
     if(e.dateKey) dates.add(e.dateKey);
     else if(e.date){
@@ -1281,7 +1282,126 @@ function getEntryDates(){
       }catch(x){}
     }
   });
+  // 待辦事項
+  todos.forEach(t=>{ if(t.dateKey) dates.add(t.dateKey); });
   return dates;
+}
+
+function renderCalendar(){
+  const months=['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+  document.getElementById('calMonthLabel').textContent = `${calYear}  ${months[calMonth]}`;
+
+  const entryDates = getEntryDates();
+  const today = todayKey();
+
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const daysInPrev = new Date(calYear, calMonth, 0).getDate();
+
+  let html = '';
+  for(let i=0; i<firstDay; i++){
+    const d = daysInPrev - firstDay + 1 + i;
+    const dk = `${calMonth===0?calYear-1:calYear}-${String(calMonth===0?12:calMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    html += `<div class="cal-day other-month${entryDates.has(dk)?' has-entry':''}${selectedDateKey===dk?' selected':''}" onclick="selectCalDay('${dk}',${calMonth===0?calYear-1:calYear},${calMonth===0?11:calMonth-1},${d})">${d}</div>`;
+  }
+  for(let d=1; d<=daysInMonth; d++){
+    const dk = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday = dk===today;
+    const hasEntry = entryDates.has(dk);
+    const isSelected = selectedDateKey===dk;
+    html += `<div class="cal-day${isToday?' today':''}${hasEntry?' has-entry':''}${isSelected?' selected':''}" onclick="selectCalDay('${dk}',${calYear},${calMonth},${d})">${d}</div>`;
+  }
+  const total = firstDay + daysInMonth;
+  const remaining = total%7===0 ? 0 : 7-(total%7);
+  for(let d=1; d<=remaining; d++){
+    const dk = `${calMonth===11?calYear+1:calYear}-${String(calMonth===11?1:calMonth+2).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    html += `<div class="cal-day other-month${entryDates.has(dk)?' has-entry':''}${selectedDateKey===dk?' selected':''}" onclick="selectCalDay('${dk}',${calMonth===11?calYear+1:calYear},${calMonth===11?0:calMonth+1},${d})">${d}</div>`;
+  }
+
+  const grid = document.getElementById('calGrid');
+  const existing = grid.querySelectorAll('.cal-day');
+  existing.forEach(el => el.remove());
+  const temp = document.createElement('div');
+  temp.innerHTML = html;
+  while(temp.firstChild){ grid.appendChild(temp.firstChild); }
+}
+
+function selectCalDay(dateKey, y, m, d){
+  if(selectedDateKey === dateKey){
+    selectedDateKey = null;
+    document.getElementById('dayDetail').style.display='none';
+    renderCalendar();
+    return;
+  }
+  selectedDateKey = dateKey;
+  renderCalendar();
+  renderDayDetail(dateKey, y, m, d);
+}
+
+function renderDayDetail(dateKey, y, m, d){
+  const el = document.getElementById('dayDetail');
+  const months=['一','二','三','四','五','六','七','八','九','十','十一','十二'];
+  const dateLabel = `${y} 年 ${months[m]} 月 ${d} 日`;
+
+  // 靈性反思記錄
+  let items = [];
+  reflectEntries.forEach(e=>{
+    let dk = e.dateKey;
+    if(!dk && e.date){
+      try{
+        const parts = e.date.split('/');
+        if(parts.length===3) dk=`${parts[0]}-${parts[1].padStart(2,'0')}-${parts[2].padStart(2,'0')}`;
+      }catch(x){}
+    }
+    if(dk===dateKey) items.push({type:'reflect', cat:e.catName||'靈性反思', text:e.text, time:e.time||''});
+  });
+
+  // 按時間排序
+  items.sort((a,b)=> a.time > b.time ? 1 : -1);
+
+  // 待辦事項
+  const dayTodos = todos.filter(t=>t.dateKey===dateKey);
+
+  const catBg = {
+    '靈魂清理':'rgba(138,90,160,0.12)', '身心合一':'rgba(60,130,80,0.12)',
+    '生命智慧':'rgba(50,90,160,0.12)', '感恩覺察':'rgba(180,140,40,0.12)',
+    '我的牌卡庫':'rgba(190,80,100,0.12)', '今日感性提醒':'rgba(160,120,40,0.1)'
+  };
+  const catColor = {
+    '靈魂清理':'#7040a0','身心合一':'#3a7050',
+    '生命智慧':'#305090','感恩覺察':'#906820','我的牌卡庫':'#a03050','今日感性提醒':'var(--gold)'
+  };
+
+  const hasAnything = items.length > 0 || dayTodos.length > 0;
+
+  el.style.display = 'block';
+  el.innerHTML = `<div class="day-detail-date">${dateLabel}</div>`
+    + (!hasAnything
+      ? `<div class="day-empty">這天還沒有記錄 🌿</div>`
+      : ''
+    )
+    // 靈性反思
+    + items.map(it=>`
+      <div class="day-entry-item">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <span class="day-entry-label" style="background:${catBg[it.cat]||'rgba(160,120,40,0.1)'};color:${catColor[it.cat]||'var(--gold)'};">${it.cat}</span>
+          ${it.time?`<span style="font-size:11px;color:var(--muted);">${it.time}</span>`:''}
+        </div>
+        <div style="font-size:14px;line-height:1.8;color:var(--text);">${it.text}</div>
+      </div>`).join('')
+    // 待辦事項
+    + (dayTodos.length>0 ? `
+      <div class="day-entry-item">
+        <div style="margin-bottom:8px;">
+          <span class="day-entry-label" style="background:rgba(50,90,160,0.1);color:#305090;">今日待辦</span>
+        </div>
+        ${dayTodos.map(t=>`
+          <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);">
+            <span style="font-size:13px;${t.done?'color:var(--muted);text-decoration:line-through;':'color:var(--text);'}">${t.done?'✓':''} ${t.text}</span>
+          </div>`).join('')}
+      </div>` : '');
+
+  el.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
 function renderCalendar(){
@@ -1339,54 +1459,6 @@ function selectCalDay(dateKey, y, m, d){
   selectedDateKey = dateKey;
   renderCalendar();
   renderDayDetail(dateKey, y, m, d);
-}
-
-function renderDayDetail(dateKey, y, m, d){
-  const el = document.getElementById('dayDetail');
-  const months=['一','二','三','四','五','六','七','八','九','十','十一','十二'];
-  const dateLabel = `${y} 年 ${months[m]} 月 ${d} 日`;
-
-  // 收集當天記錄
-  let items = [];
-  reflectEntries.forEach(e=>{
-    let dk = e.dateKey;
-    if(!dk && e.date){
-      try{
-        const parts = e.date.split('/');
-        if(parts.length===3) dk=`${parts[0]}-${parts[1].padStart(2,'0')}-${parts[2].padStart(2,'0')}`;
-      }catch(x){}
-    }
-    if(dk===dateKey) items.push({type:'reflect', cat:e.catName||'靈性反思', text:e.text, time:e.time||''});
-  });
-
-  // 按時間排序
-  items.sort((a,b)=> a.time > b.time ? 1 : -1);
-
-  const catBg = {
-    '靈魂清理':'rgba(138,90,160,0.12)', '身心合一':'rgba(60,130,80,0.12)',
-    '生命智慧':'rgba(50,90,160,0.12)', '感恩覺察':'rgba(180,140,40,0.12)',
-    '我的牌卡庫':'rgba(190,80,100,0.12)'
-  };
-  const catColor = {
-    '靈魂清理':'#7040a0','身心合一':'#3a7050',
-    '生命智慧':'#305090','感恩覺察':'#906820','我的牌卡庫':'#a03050'
-  };
-
-  el.style.display = 'block';
-  el.innerHTML = `<div class="day-detail-date">${dateLabel}</div>`
-    + (items.length===0
-      ? `<div class="day-empty">這天還沒有記錄 🌿</div>`
-      : items.map(it=>`
-        <div class="day-entry-item">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-            <span class="day-entry-label" style="background:${catBg[it.cat]||'rgba(160,120,40,0.1)'};color:${catColor[it.cat]||'var(--gold)'};">${it.cat}</span>
-            ${it.time?`<span style="font-size:11px;color:var(--muted);">${it.time}</span>`:''}
-          </div>
-          <div style="font-size:14px;line-height:1.8;color:var(--text);">${it.text}</div>
-        </div>`).join('')
-    );
-  // 滾動到日曆下方
-  el.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
 // ── REFLECT ──
