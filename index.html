@@ -29,6 +29,7 @@ function initFirebase(){
 
     window.fbSave = async function(key, data){
       try {
+        if(window.ignoreNextSnapshot) window.ignoreNextSnapshot[key] = true;
         await db.collection('userdata').doc(USER_ID)
           .collection('collections').doc(key)
           .set({ data: JSON.stringify(data) });
@@ -36,6 +37,8 @@ function initFirebase(){
     };
 
     let connectedOnce = false;
+    let ignoreNextSnapshot = {};
+
     function fbListen(key, localKey, renderFn){
       db.collection('userdata').doc(USER_ID)
         .collection('collections').doc(key)
@@ -45,22 +48,30 @@ function initFirebase(){
             const el = document.getElementById('syncStatus');
             if(el){ el.textContent = '☁ 已連線'; el.style.color = '#7a9a6a'; }
           }
+          // 如果剛剛本地寫入，跳過這次 Firebase 回調
+          if(ignoreNextSnapshot[key]){
+            ignoreNextSnapshot[key] = false;
+            return;
+          }
           if(snap.exists){
             const raw = snap.data().data;
-            // 只有 Firebase 有實際資料才覆蓋本地
             try {
               const parsed = JSON.parse(raw);
-              if(Array.isArray(parsed) && parsed.length === 0) return; // Firebase 是空的，保留本地
-              if(raw === null || raw === undefined) return;
+              if(Array.isArray(parsed) && parsed.length === 0) return;
               const current = localStorage.getItem(localKey);
+              // 比較長度，Firebase 資料不能比本地少
+              if(current){
+                try{
+                  const localParsed = JSON.parse(current);
+                  if(Array.isArray(localParsed) && Array.isArray(parsed) && parsed.length < localParsed.length) return;
+                }catch(e){}
+              }
               if(raw !== current){
                 localStorage.setItem(localKey, raw);
                 try{ renderFn(); }catch(e){}
               }
             } catch(e){ return; }
-          }
-          // Firebase 沒有這筆資料，把本地資料推上去
-          else {
+          } else {
             const local = localStorage.getItem(localKey);
             if(local && window.fbSave){
               try {
@@ -77,6 +88,8 @@ function initFirebase(){
           if(el){ el.textContent = '☁ 離線模式'; el.style.color = 'var(--muted)'; }
         });
     }
+
+    window.ignoreNextSnapshot = ignoreNextSnapshot;
 
     fbListen('courses', 'myspace_courses', ()=>{
       courses = JSON.parse(localStorage.getItem('myspace_courses')||'[]');
@@ -1430,6 +1443,8 @@ function saveCardEntry(){
   });
   localStorage.setItem('myspace_cardlib', JSON.stringify(cards));
   if(window.fbSave) fbSave('cardlib', cards);
+  renderTodayCards();
+  renderCalendar();
   // 也存進 reflectEntries 讓日曆和首頁看得到
   reflectEntries.unshift({
     id: Date.now()+1,
