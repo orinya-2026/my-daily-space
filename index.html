@@ -1252,7 +1252,13 @@ let calYear = new Date().getFullYear();
 let calMonth = new Date().getMonth();
 let selectedDateKey = null;
 
-function todayKey(){ return new Date().toISOString().split('T')[0]; }
+function todayKey(){
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth()+1).padStart(2,'0');
+  const d = String(now.getDate()).padStart(2,'0');
+  return `${y}-${m}-${d}`;
+}
 
 function calPrev(){ calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCalendar(); }
 function calNext(){ calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCalendar(); }
