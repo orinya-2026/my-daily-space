@@ -1424,7 +1424,7 @@ function renderTodayCards(){
   const cards = JSON.parse(localStorage.getItem('myspace_cardlib')||'[]');
   const todayCards = cards.filter(c=>c.dateKey===todayKey());
   if(todayCards.length===0){
-    el.innerHTML=`<div onclick="showScreen('reflect')" style="cursor:pointer;text-align:center;padding:10px 0;font-size:12px;color:var(--muted);letter-spacing:1px;">🃏 今天還沒有牌卡 · 點此去抽一張</div>`;
+    el.innerHTML=`<div onclick="goToCardlib()" style="cursor:pointer;text-align:center;padding:10px 0;font-size:12px;color:var(--muted);letter-spacing:1px;">🃏 今天還沒有牌卡 · 點此去抽一張</div>`;
     return;
   }
   el.innerHTML = todayCards.map(c=>`
@@ -2075,6 +2075,13 @@ function showScreen(name){
     setEngTab('today');
     renderWeeklyWords();
   }
+}
+function goToCardlib(){
+  showScreen('reflect');
+  setTimeout(()=>{
+    const cardlibBtn = Array.from(document.querySelectorAll('.rcat')).find(b=>b.textContent==='我的牌卡庫');
+    if(cardlibBtn) setRCat('cardlib', cardlibBtn);
+  }, 100);
 }
 function goHome(){showScreen('home');}
 
