@@ -1015,6 +1015,13 @@ input[type=range]::-webkit-slider-thumb{
 
     <!-- 單字本 -->
     <div id="engArea-list" style="display:none;">
+      <!-- 搜尋 -->
+      <div style="position:relative;margin-bottom:10px;">
+        <input type="text" id="wordSearch" placeholder="搜尋單字或中文意思⋯⋯"
+          oninput="renderWordList()"
+          style="width:100%;padding:9px 36px 9px 12px;font-size:14px;">
+        <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px;pointer-events:none;">🔍</span>
+      </div>
       <!-- 排序 -->
       <div style="display:flex;gap:0;border:1px solid var(--border);border-radius:1px;overflow:hidden;margin-bottom:14px;">
         <button class="sort-btn active" id="sort-newest" onclick="setWordSort('newest')">最新</button>
@@ -2753,8 +2760,21 @@ function addWord(){
 function renderWordList(){
   const el = document.getElementById('wordList');
   if(!el) return;
-  const words = getSortedWords();
-  if(words.length===0){ el.innerHTML='<div style="text-align:center;padding:20px 0;color:var(--muted);font-size:13px;letter-spacing:1px;">單字本還是空的，去今日單字生成吧 🌿</div>'; return; }
+  const searchEl = document.getElementById('wordSearch');
+  const query = searchEl ? searchEl.value.trim().toLowerCase() : '';
+  let words = getSortedWords();
+  // 搜尋過濾
+  if(query){
+    words = words.filter(w=>
+      w.word.toLowerCase().includes(query) ||
+      w.meaning.toLowerCase().includes(query) ||
+      (w.example||'').toLowerCase().includes(query)
+    );
+  }
+  if(words.length===0){
+    el.innerHTML=`<div style="text-align:center;padding:20px 0;color:var(--muted);font-size:13px;letter-spacing:1px;">${query?'找不到符合的單字 🔍':'單字本還是空的，去今日單字生成吧 🌿'}</div>`;
+    return;
+  }
   el.innerHTML = words.map(w=>`
     <div style="background:${w.known?'rgba(122,154,106,0.08)':'var(--card)'};border:1px solid var(--border);border-radius:2px;padding:12px 14px;margin-bottom:8px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;">
