@@ -2850,12 +2850,24 @@ async function generateWeeklyWords(){
   const el = document.getElementById('weeklyWordsList');
   el.innerHTML = `<div style="text-align:center;padding:16px 0;color:var(--muted);font-size:13px;letter-spacing:1px;">抽取今日單字⋯⋯ 🌿</div>`;
 
-  // 隨機抽5個，避免重複今日已顯示的
-  const pool = [...WORD_BANK];
+  // 找出還沒出現過的單字（單字本裡沒有的）
+  const seenWords = new Set(engWords.map(w => w.word.toLowerCase()));
+  let pool = WORD_BANK.filter(w => !seenWords.has(w.word.toLowerCase()));
+
+  // 全部都出現過了，重新輪一輪（只從「未記住」的裡面抽）
+  if(pool.length === 0){
+    const unknownWords = new Set(engWords.filter(w => !w.known).map(w => w.word.toLowerCase()));
+    pool = WORD_BANK.filter(w => unknownWords.has(w.word.toLowerCase()));
+    // 如果全部都記住了，就從整個庫重新來
+    if(pool.length === 0) pool = [...WORD_BANK];
+    showToast('🎉 已學完所有單字！重新輪一輪');
+  }
+
+  // 隨機抽5個
   const picked = [];
-  while(picked.length < 5 && pool.length > 0){
-    const idx = Math.floor(Math.random() * pool.length);
-    picked.push(pool.splice(idx, 1)[0]);
+  const shuffled = [...pool].sort(() => Math.random() - 0.5);
+  for(let i = 0; i < 5 && i < shuffled.length; i++){
+    picked.push(shuffled[i]);
   }
 
   engWeeklyWords = picked;
@@ -2863,7 +2875,7 @@ async function generateWeeklyWords(){
 
   // 自動加入單字本（不重複）
   picked.forEach(w => {
-    const exists = engWords.find(x=>x.word.toLowerCase()===w.word.toLowerCase());
+    const exists = engWords.find(x => x.word.toLowerCase() === w.word.toLowerCase());
     if(!exists){
       engWords.unshift({
         id: Date.now() + Math.random(),
@@ -2880,7 +2892,7 @@ async function generateWeeklyWords(){
   saveEngWords();
   renderWeeklyWords();
   renderWordList();
-  showToast('✦ 今日5個單字已加入單字本');
+  showToast(`✦ 今日5個單字已加入單字本（還剩 ${Math.max(0, WORD_BANK.filter(w => !seenWords.has(w.word.toLowerCase())).length - 5)} 個未學）`);
 }
 
 function renderWeeklyWords(){
